@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-# Runnable entrypoint for Ass1.
-# This keeps the "executable Ass1" requirement even if you don't "compile" Python.
-set -euo pipefail
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec python3 "$DIR/ass1.py"
