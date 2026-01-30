@@ -1,0 +1,11 @@
+ASS1_SAVE_V1
+next_number=5
+points=2
+last_r=4
+last_c=2
+board=
+0 0 0 0 0
+0 0 0 0 0
+0 0 0 0 0
+0 0 0 0 2
+0 0 4 3 1
