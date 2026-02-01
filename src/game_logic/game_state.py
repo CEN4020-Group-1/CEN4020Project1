@@ -33,6 +33,7 @@ class GameState:
         col = random.randint(0, 4)
         self.board[row][col] = 1
         self.last_pos = (row, col)
+        self.record_action_lv1(row, col, False)
         self.current_num = 2
         
     def start_level2(self, completed_board):   #initialize level 2 with completed level 1 board
@@ -44,6 +45,7 @@ class GameState:
         self.game_over = False
         self.win = False
         self.move_history = []                              #reset move history for level 2
+        self.record_action_lv2(self.last_pos[0], self.last_pos[1], -1)
         
     def _create_empty_ring(self):   #create empty outer ring dictionary
         ring = {}
@@ -89,3 +91,57 @@ class GameState:
         self.move_history = state.get('move_history', [])
         self.game_over = False
         self.win = False
+
+    #I should give move_history it's own class - Jose
+    def record_action_lv1(self, x, y, scored):
+        new_action = Action()
+        new_action.record_lv1(x, y, scored)
+        self.move_history.append(new_action)
+        self.print_history()
+    
+    def record_action_lv2(self, x, y, outer):
+        new_action = Action()
+        new_action.record_lv2(x, y, outer)
+        self.move_history.append(new_action)
+        self.print_history()
+
+    def undo_history(self):
+        self.move_history.pop()
+        self.print_history()
+
+    def undo_to_first_history(self):
+        self.move_history = [self.move_history[0]]
+        self.print_history()
+
+    def clear_history(self):
+        self.move_history = []
+        self.print_history()
+    
+    def print_history(self):
+        for action in self.move_history:
+            action.action_print()
+
+#Action will come along with history if I seperate them from game state - Jose
+class Action:
+    def __init__(self):
+        self.inner_pos_x = -1
+        self.inner_pos_y = -1
+        self.outer_pos = -1
+        self.scored = False
+
+    def record_lv1(self, x, y, scored = False):
+        self.inner_pos_x = x
+        self.inner_pos_y = y
+        self.scored = scored
+
+    def record_lv2(self, x, y, outer = -1):
+        self.inner_pos_x = x
+        self.inner_pos_y = y
+        self.outer_pos = outer
+
+    def action_print(self):
+        print("Position (", self.inner_pos_x, " ", self.inner_pos_y, ")")
+        if self.scored:
+            print("Scored a point!")
+        if self.outer_pos != -1:
+            print("Outer Ring Position: ", self.outer_pos)
