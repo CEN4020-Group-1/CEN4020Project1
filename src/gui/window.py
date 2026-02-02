@@ -75,8 +75,10 @@ class GameWindow:
         btn_height = 35
         
         self.btn_quit = Button(50, btn_y, btn_width, btn_height, "Quit", self.small_font)
+        self.btn_undo = Button(160, btn_y, btn_width, btn_height, "Undo", self.small_font)
+        self.btn_clear = Button(270, btn_y, btn_width, btn_height, "Clear", self.small_font)
         
-        self.buttons = [self.btn_quit]
+        self.buttons = [self.btn_quit, self.btn_undo, self.btn_clear]
         
     def set_game_components(self, game_state, level1_logic, level2_logic):
         #set game components from main
@@ -130,7 +132,13 @@ class GameWindow:
         if self.btn_quit.is_clicked(mouse_pos):
             self.running = False
             return
-            
+        
+        #Should add undo functionality for lv1 by Sunday
+        if self.btn_undo.is_clicked(mouse_pos):
+            self.game_state.undo()
+        
+        #Will add clear functionality here later
+        
         #check board click
         if self.game_state.win:
             return   #don't accept clicks if level is won (transition happens automatically)

@@ -12,10 +12,9 @@ class GameState:
         self.score = 0                                      #player score
         self.last_pos = None                                #position of last placed number
         self.game_over = False                              #game over flag
-        self.win = False                                    #win flag for current level
-        #NOTE: move_history is a placeholder for Story 5 (undo feature)
-        self.move_history = []
-        
+        self.win = False
+        self.move_history = History()
+    
     def reset_level1(self):   #reset for a new level 1 game
         self.level = 1
         self.board = [[0 for _ in range(5)] for _ in range(5)]
@@ -25,7 +24,7 @@ class GameState:
         self.last_pos = None
         self.game_over = False
         self.win = False
-        self.move_history = []
+        self.move_history.clear_history()
         
     def start_level1_with_random_one(self):   #place number 1 randomly for level 1 start (story 1 requirement)
         self.reset_level1()
@@ -33,7 +32,7 @@ class GameState:
         col = random.randint(0, 4)
         self.board[row][col] = 1
         self.last_pos = (row, col)
-        self.record_action_lv1(row, col, False)
+        self.record(row, col, False)
         self.current_num = 2
         
     def start_level2(self, completed_board):   #initialize level 2 with completed level 1 board
@@ -45,7 +44,7 @@ class GameState:
         self.game_over = False
         self.win = False
         self.move_history = []                              #reset move history for level 2
-        self.record_action_lv2(self.last_pos[0], self.last_pos[1], -1)
+        self.record(self.last_pos[0], self.last_pos[1], -1)
         
     def _create_empty_ring(self):   #create empty outer ring dictionary
         ring = {}
@@ -88,10 +87,35 @@ class GameState:
         self.current_num = state['current_num']
         self.score = state['score']
         self.last_pos = state['last_pos']
-        self.move_history = state.get('move_history', [])
+        self.move_history = state['board_history']
         self.game_over = False
         self.win = False
+        
+    def record(self, x, y, other):
+        if self.level == 1:
+            self.move_history.record_action_lv1(x, y, other)
+        else:
+            self.move_history.record_action_lv2(x, y, other)
+    
+    def undo(self):
+        #In lv 1 I can just pop from the array
+        if self.level == 1:
+            last_action = self.move_history.undo_history()
+            penult_action = self.move_history.move_history[-1]
+            self.board[last_action.inner_pos_x][last_action.inner_pos_y] = 0
+            self.current_num -= 1
+            self.last_pos = (penult_action.inner_pos_x, penult_action.inner_pos_y)
+            
+            if last_action.scored:
+                self.score -= 1
+            
+        
+        #In lv 2 I gotta pay attention to current num
 
+class History:
+    def _init_(self):
+        self.move_history = []
+    
     #I should give move_history it's own class - Jose
     def record_action_lv1(self, x, y, scored):
         new_action = Action()
@@ -104,10 +128,12 @@ class GameState:
         new_action.record_lv2(x, y, outer)
         self.move_history.append(new_action)
         self.print_history()
+    
+    def record_outer_action(self, index, outer):
+        self.move_history[index].edit_outer_pos(outer)
 
     def undo_history(self):
-        self.move_history.pop()
-        self.print_history()
+        return self.move_history.pop()        
 
     def undo_to_first_history(self):
         self.move_history = [self.move_history[0]]
@@ -118,9 +144,11 @@ class GameState:
         self.print_history()
     
     def print_history(self):
-        for action in self.move_history:
-            action.action_print()
-
+        print("------------------------------")
+        for i in range(len(self.move_history)):
+            print(i, ": ", self.move_history[i].action_log())
+        print("------------------------------")
+    
 #Action will come along with history if I seperate them from game state - Jose
 class Action:
     def __init__(self):
@@ -138,10 +166,16 @@ class Action:
         self.inner_pos_x = x
         self.inner_pos_y = y
         self.outer_pos = outer
+    
+    def edit_outer_pos(self, outer):
+        self.outer_pos = outer
 
-    def action_print(self):
-        print("Position (", self.inner_pos_x, " ", self.inner_pos_y, ")")
+    def action_log(self):
+        text = "".join(str("Position (%d, %d)" % (self.inner_pos_x, self.inner_pos_y)))
+        
         if self.scored:
-            print("Scored a point!")
+            text += " Scored a point!"
         if self.outer_pos != -1:
-            print("Outer Ring Position: ", self.outer_pos)
+            text += str(" Outer Ring Position: %d" % (self.outer_pos))
+        
+        return text

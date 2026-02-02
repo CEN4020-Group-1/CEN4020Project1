@@ -45,8 +45,9 @@ class Level1Logic:
         if not valid:
             return (False, error)
         
+        scored = self.is_diagonal_move(row, col)
         #add score for diagonal moves
-        if self.is_diagonal_move(row, col):
+        if scored:
             self.state.score += 1
         
         #place the number
@@ -55,6 +56,7 @@ class Level1Logic:
         #update state
         self.state.last_pos = (row, col)
         self.state.current_num += 1
+        self.state.record(row, col, scored)
         
         #check win condition
         if self.state.current_num > 25:
