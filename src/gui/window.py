@@ -79,7 +79,7 @@ class GameWindow:
         self.message_timer = 0
         
         #completion logger for Story 7
-        self.logger = CompletionLogger("game_log.csv")
+        self.logger = CompletionLogger("game_log.txt")
         self.level1_logged = False   #track if Level 1 completion was logged
         self.level2_logged = False   #track if Level 2 completion was logged
         
@@ -161,12 +161,12 @@ class GameWindow:
             self.running = False
             return
         
-        #undo - only allow if more than just "1" is placed (current_num > 2)
-        if self.btn_undo.is_clicked(mouse_pos) and self.game_state.current_num > 2:
+        #undo - only allow if more than just "1" is placed (current_num > 2) and game not won
+        if self.btn_undo.is_clicked(mouse_pos) and self.game_state.current_num > 2 and not self.game_state.win:
             self.game_state.undo()
         
-        #Will add clear functionality here later
-        if self.btn_clear.is_clicked(mouse_pos):
+        #clear - disabled on win screen
+        if self.btn_clear.is_clicked(mouse_pos) and not self.game_state.win:
             if self.game_state.level == 1:
                 self.game_state.reset_level1()
             else:
@@ -246,35 +246,26 @@ class GameWindow:
             self.level2_logged = True
         
             
-    def _flatten_board(self):
-        #flatten 2D board to semicolon-separated string for logging
-        flat = []
-        for row in self.game_state.board:
-            flat.extend(row)
-        return ";".join(str(x) for x in flat)
-    
-    def _flatten_outer_ring(self):
-        #flatten outer ring to semicolon-separated string for logging
-        ring_values = [str(self.game_state.outer_ring.get((r, c), 0)) 
-                       for r in range(7) for c in range(7) 
-                       if (r, c) in self.game_state.outer_ring]
-        return ";".join(ring_values)
-    
     def _log_completion(self, level):
-        #log game completion for Story 7
+        #log game completion for Story 7 with human-readable board format
         if level == 1:
-            board_flat = self._flatten_board()
+            record = CompletionRecord(
+                player_name="Player",
+                timestamp_iso=iso_now(),
+                level=level,
+                points=self.game_state.score,
+                board=[row[:] for row in self.game_state.board],  #copy 2D board
+                outer_ring=None
+            )
         else:
-            #for level 2, include both inner board and outer ring
-            board_flat = self._flatten_board() + "|" + self._flatten_outer_ring()
-        
-        record = CompletionRecord(
-            player_name="Player",
-            timestamp_iso=iso_now(),
-            level=level,
-            points=self.game_state.score,
-            board_flat=board_flat
-        )
+            record = CompletionRecord(
+                player_name="Player",
+                timestamp_iso=iso_now(),
+                level=level,
+                points=self.game_state.score,
+                board=[row[:] for row in self.game_state.board],  #copy 2D board
+                outer_ring=dict(self.game_state.outer_ring)  #copy outer ring
+            )
         self.logger.append_record(record)
         
     def _transition_to_level2(self):
