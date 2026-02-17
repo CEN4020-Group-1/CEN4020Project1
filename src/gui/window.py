@@ -4,18 +4,18 @@ import pygame
 import sys
 from .board_renderer import BoardRenderer
 from .colors import *
-
+from .sound import valid_sound, invalid_sound
 #import completion logger for Story 7
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from completion_logger import CompletionLogger, CompletionRecord, iso_now
 
-#sound effects for User Story 2 and 6
-pygame.mixer.init(44100, -16, 2, 2048)
+# #sound effects for User Story 2 and 6
+# pygame.mixer.init(44100, -16, 2, 2048)
 
-valid_sound = pygame.mixer.Sound("Sprint1Story2.wav")
-invalid_sound = pygame.mixer.Sound("Sprint1Story6.wav")
+# valid_sound = pygame.mixer.Sound("Sprint1Story2.wav")
+# invalid_sound = pygame.mixer.Sound("Sprint1Story6.wav")
 
 
 class Button:
@@ -60,6 +60,9 @@ class GameWindow:
         self.clock = pygame.time.Clock()
         self.running = True
         
+        #User Story 15: Sound On/Off
+        self.sound_on = True
+        
         #initialize renderer
         self.renderer = BoardRenderer(self.screen)
         self.renderer.init_fonts()
@@ -98,15 +101,19 @@ class GameWindow:
         row1_total_width = 2 * btn_width + btn_spacing
         row1_start_x = (self.width - row1_total_width) // 2
         
+        
         self.btn_undo = Button(row1_start_x, row1_y, btn_width, btn_height, "Undo", self.small_font)
         self.btn_clear = Button(row1_start_x + btn_width + btn_spacing, row1_y, btn_width, btn_height, "Clear", self.small_font)
+        #User Story 15 Sound On/Off Button
+        self.btn_sound_off = Button(50, row1_y - 10, btn_width, btn_height, "-", self.small_font)
+        self.btn_sound_on = Button(225, row1_total_width/2, btn_width + 40, btn_height, "Sound: ON", self.small_font)
         
         #row 2: Quit button (centered, red)
         row2_y = row1_y + btn_height + 8
         quit_x = (self.width - btn_width) // 2
         self.btn_quit = Button(quit_x, row2_y, btn_width, btn_height, "Quit", self.small_font, danger=True)
         
-        self.buttons = [self.btn_undo, self.btn_clear, self.btn_quit]
+        self.buttons = [self.btn_undo, self.btn_clear, self.btn_quit, self.btn_sound_on]
         
     def set_game_components(self, game_state, level1_logic, level2_logic):
         #set game components from main
@@ -185,24 +192,29 @@ class GameWindow:
             if cell:
                 self._handle_level2_click(cell)
                 
+        # Sound On/Off Button
+        if self.btn_sound_on.is_clicked(mouse_pos):
+            self.sound_on = not self.sound_on
+            self.btn_sound_on.text = "Sound: ON" if self.sound_on else "Sound: OFF"
+            return
+                
     def _handle_level1_click(self, cell):
         row, col = cell
         success, error = self.level1_logic.place_number(row, col)
         
         if success:
             #placeholder for sound (story 2)
-            valid_sound.play()
+            valid_sound(self.sound_on)
         else:
             #placeholder for error sound (story 6)
+            invalid_sound(self.sound_on)
             if error == "out_of_bounds":
                 self.show_message("Cell is out of bounds!")
-                invalid_sound.play()
             elif error == "cell_occupied":
                 self.show_message("Cell is already occupied!")
-                invalid_sound.play()
             elif error == "not_adjacent":
                 self.show_message("Must be adjacent to previous number!")
-                invalid_sound.play()
+                
                 
     def _handle_level2_click(self, cell):
         ring_row, ring_col = cell
@@ -216,7 +228,7 @@ class GameWindow:
         
         if success:
             #placeholder for sound (story 2)
-            valid_sound.play()
+            valid_sound.playd()
         else:
             #placeholder for error sound (story 6)
             if error == "not_ring_cell":
