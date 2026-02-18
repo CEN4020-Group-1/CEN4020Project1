@@ -72,6 +72,7 @@ class GameWindow:
         self.game_state = None
         self.level1_logic = None
         self.level2_logic = None
+        self.level3_logic = None
         
         #UI state
         self.hover_cell = None
@@ -82,6 +83,7 @@ class GameWindow:
         self.logger = CompletionLogger("game_log.txt")
         self.level1_logged = False   #track if Level 1 completion was logged
         self.level2_logged = False   #track if Level 2 completion was logged
+        self.level3_logged = False
         
         #create buttons
         self._create_buttons()
@@ -108,11 +110,12 @@ class GameWindow:
         
         self.buttons = [self.btn_undo, self.btn_clear, self.btn_quit]
         
-    def set_game_components(self, game_state, level1_logic, level2_logic):
+    def set_game_components(self, game_state, level1_logic, level2_logic, level3_logic):
         #set game components from main
         self.game_state = game_state
         self.level1_logic = level1_logic
         self.level2_logic = level2_logic
+        self.level3_logic = level3_logic
         
     def show_message(self, msg, duration=2000):
         #display a temporary message
@@ -180,11 +183,16 @@ class GameWindow:
             cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
             if cell:
                 self._handle_level1_click(cell)
-        else:
+        elif self.game_state.level == 2:
             cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=2)
             if cell:
                 self._handle_level2_click(cell)
-                
+        else:
+            cell.self.render.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
+            if cell:
+                self._handle_level3_click(cell)
+            
+                    
     def _handle_level1_click(self, cell):
         row, col = cell
         success, error = self.level1_logic.place_number(row, col)
@@ -228,6 +236,25 @@ class GameWindow:
             elif error == "invalid_position":
                 self.show_message("Invalid position for this number!")
                 invalid_sound.play()
+    
+    def _handle_level3_click(self, cell):
+        row, col = cell
+        success, error = self.level3_logic.place_number(row, col)
+        
+        if success:
+            #placeholder for sound (story 2)
+            valid_sound.play()
+        else:
+            #placeholder for error sound (story 6)
+            if error == "out_of_bounds":
+                self.show_message("Cell is out of bounds!")
+                invalid_sound.play()
+            elif error == "cell_occupied":
+                self.show_message("Cell is already occupied!")
+                invalid_sound.play()
+            elif error == "not_adjacent":
+                self.show_message("Must be adjacent to previous number!")
+                invalid_sound.play()
                 
     def _update(self):
         #update game state
@@ -241,9 +268,8 @@ class GameWindow:
             self._transition_to_level2()
         
         #log Level 2 completion (Story 7)
-        if self.game_state.level == 2 and self.game_state.win and not self.level2_logged:
-            self._log_completion(2)
-            self.level2_logged = True
+        if self.game_state.level == 2 and self.game_state.win:
+            self._transition_to_level3()
         
             
     def _log_completion(self, level):
@@ -281,7 +307,18 @@ class GameWindow:
         self.game_state.start_level2(completed_board)
         self._update_window_title()
         self.show_message("Level 1 Complete! Starting Level 2...")
+    
+    def _transition_to_level3(self):
+        if not self.level2_logged:
+            self._log_completion(2)
+            self.level2_logged = True
         
+        completed_ring = [row[:] = for row in self.game_state.outer_ring]
+        
+        self.game_state.start_level3(completed_ring)
+        self._update_window_title()
+        self.show_message("Level 2 Complete! Starting Level 3...")
+    
     def _update_window_title(self):
         pygame.display.set_caption("Matrix Game - Level %d" % self.game_state.level)
         
@@ -323,7 +360,7 @@ class GameWindow:
             self.renderer.draw_message(self.message)
             
         #draw win message
-        if self.game_state.win and self.game_state.level == 2:
+        if self.game_state.win and self.game_state.level == 3:
             self._draw_win_screen()
             
         pygame.display.flip()

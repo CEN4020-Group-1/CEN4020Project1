@@ -2,7 +2,6 @@
 
 import random
 
-
 class GameState:
     def __init__(self):
         self.level = 1                                      #current level (1 or 2)
@@ -59,10 +58,19 @@ class GameState:
         self.board = [row[:] for row in completed_board]    #copy the completed board
         self.outer_ring = self._create_empty_ring()         #create empty outer ring
         self.current_num = 2                                #start placing from 2 in outer ring
-        self.last_pos = self._find_number_position(1)       #find where 1 is on inner board
+        self.last_pos = (self.original_one_pos[0], self.original_one_pos[1])#find where 1 is on inner board
         self.game_over = False
         self.win = False
-        
+    
+    def start_level3(self):
+        self.level = 3
+        self.board = [[0 for _ in range(5)] for _ in range(5)] #Empty the inner board     
+        self.board[self.original_one_pos[0]][self.original_one_pos[1]] = 1 #1st num remains as always
+        self.last_pos = (self.original_one_pos[0],self.original_one_pos[1])
+        self.current_num = 2
+        self.game_over = False
+        self.win = False
+    
     def _create_empty_ring(self):   #create empty outer ring dictionary
         ring = {}
         #top row (7 cells: col 0-6, row 0)
@@ -87,7 +95,7 @@ class GameState:
                     return (row, col)
         return None
     
-    def _find_outer_position(self, num):
+    def find_outer_position(self, num):
         return self.move_history.get_action(num).outer_pos
     
     def get_state_dict(self):   #get state as dictionary for saving
@@ -113,6 +121,8 @@ class GameState:
         self.win = False
     
     def undo(self):
+        if self.current_num == 1: return #You cannot undo the first number
+        
         #In lv 1 I can just pop from the array
         if self.level == 1:
             last_action = self.move_history.undo_history()
@@ -126,7 +136,7 @@ class GameState:
                 self.score -= 1
             
         #In lv 2 I gotta pay attention to current num
-        elif self.current_num > 2:
+        elif self.current_num == 2:
             #Current number is ahead of it's previous action by 1
             #Accounting for array starting at 0, previous action is current num - 2
             last_action = self.move_history.get_action(self.current_num - 2)
@@ -136,6 +146,19 @@ class GameState:
             last_action.edit_outer_pos((-1, -1))
             self.current_num -= 1
             self.last_pos = (penult_action.inner_pos_x, penult_action.inner_pos_y)
+        
+        elif self.current_num == 3:
+            last_action = self.move_history.get_action(self.current_num - 2)
+            penult_action = self.move_history.get_action(self.current_num - 3)
+            
+            self.board[last_action.third_pos[0], last_action.third_pos[1]] = 0
+            last_action.edit_lv3((-1, -1))
+            self.current_num -= 1
+            self.last_pos = (penult_action.third_pos[0], penult_action.third_pos[1])
+            
+            if last_action.lv3_scored:
+                self.score -= 1
+                last_action.lv3_scored = False
     
     def reset_lv2(self):
         for i in range(self.current_num - 1):
@@ -153,6 +176,9 @@ class History:
     def record_outer_action(self, index, outer):
         self.arr[index].edit_outer_pos(outer)
 
+    def record_action_lv3(self, index, inner):
+        self.arr[index].edit_lv2(inner)
+    
     def get_action(self, index):
         return self.arr[index]
 
@@ -173,7 +199,9 @@ class Action:
         self.inner_pos_x = -1
         self.inner_pos_y = -1
         self.outer_pos = (-1, -1)
+        self.third_pos = (-1, -1)
         self.scored = False
+        self.lv3_scored = False
 
     def record_lv1(self, x, y, scored = False):
         self.inner_pos_x = x
@@ -183,12 +211,19 @@ class Action:
     def edit_outer_pos(self, outer_pos):
         self.outer_pos = outer_pos
 
+    def edit_lv3(self, inner_pos):
+        self.third_pos = inner_pos
+    
     def action_log(self):
         text = "".join(str("Position (%d, %d)" % (self.inner_pos_x, self.inner_pos_y)))
         
         if self.scored:
             text += " Scored a point!"
         if self.outer_pos != (-1, -1):
-            text += str(" Outer Ring Position: (%d, %d)" % (self.outer_pos))
+            text += str("\nOuter Ring Position: (%d, %d)" % (self.outer_pos))
+        if self.third_pos != (-1, -1):
+            text += str("\nLv3 Ring Position: (%d, %d)" % (self.third_pos))
+            if self.lv3_scored:
+                text += str(" Scored a Point!")
         
         return text
