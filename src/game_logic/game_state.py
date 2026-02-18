@@ -87,6 +87,9 @@ class GameState:
                     return (row, col)
         return None
     
+    def _find_outer_position(self, num):
+        return self.move_history.get_action(num).outer_pos
+    
     def get_state_dict(self):   #get state as dictionary for saving
         return {
             'level': self.level,
