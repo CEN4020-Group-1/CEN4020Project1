@@ -173,7 +173,6 @@ class GameWindow:
             if self.game_state.level == 1:
                 self.game_state.reset_level1()
             else:
-                print("AJJHOAISHDOHAOH")
                 self.game_state.reset_lv2()
                 self.game_state.board
         
@@ -192,6 +191,7 @@ class GameWindow:
         else:
             cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
             if cell:
+                print("CELL: ", cell)
                 self._handle_level3_click(cell)
             
                     
@@ -315,7 +315,8 @@ class GameWindow:
             self._log_completion(2)
             self.level2_logged = True
         
-        completed_ring = [row[:] for row in self.game_state.outer_ring]
+        #save completed level 2 board
+        completed_ring = self.game_state.outer_ring.copy()
         
         self.game_state.start_level3(completed_ring)
         self._update_window_title()
@@ -346,8 +347,14 @@ class GameWindow:
                 last_pos=self.game_state.last_pos,
                 hover_cell=self.hover_cell
             )
-        else:
+        elif self.game_state.level == 2:
             self.renderer.draw_level2_board(
+                self.game_state.board,
+                self.game_state.outer_ring,
+                hover_cell=self.hover_cell
+            )
+        else:
+            self.renderer.draw_level3_board(
                 self.game_state.board,
                 self.game_state.outer_ring,
                 hover_cell=self.hover_cell

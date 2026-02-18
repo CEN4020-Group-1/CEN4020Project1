@@ -63,12 +63,13 @@ class GameState:
         self.game_over = False
         self.win = False
     
-    def start_level3(self):
+    def start_level3(self, completed_ring):
         self.level = 3
+        self.outer_ring = completed_ring.copy()
         self.board = [[0 for _ in range(5)] for _ in range(5)] #Empty the inner board     
         self.board[self.original_one_pos[0]][self.original_one_pos[1]] = 1 #1st num remains as always
-        self.last_pos = (self.original_one_pos[0],self.original_one_pos[1])
         self.current_num = 2
+        self.last_pos = (self.original_one_pos[0],self.original_one_pos[1])
         self.game_over = False
         self.win = False
     
@@ -179,8 +180,8 @@ class History:
     def record_outer_action(self, index, outer):
         self.arr[index].edit_outer_pos(outer)
 
-    def record_action_lv3(self, index, inner):
-        self.arr[index].edit_lv2(inner)
+    def record_action_lv3(self, index, inner, scored = False):
+        self.arr[index].edit_lv3(inner, scored)
     
     def get_action(self, index):
         return self.arr[index]
@@ -214,7 +215,8 @@ class Action:
     def edit_outer_pos(self, outer_pos):
         self.outer_pos = outer_pos
 
-    def edit_lv3(self, inner_pos):
+    def edit_lv3(self, inner_pos, scored = False):
+        self.lv3_scored = scored
         self.third_pos = inner_pos
     
     def action_log(self):

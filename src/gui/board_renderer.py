@@ -84,7 +84,6 @@ class BoardRenderer:
                                
     def draw_level2_board(self, inner_board, outer_ring, hover_cell=None):
         #draw 7x7 board for level 2 (inner board + outer ring)
-        
         #draw outer ring cells first
         for pos, value in outer_ring.items():
             ring_row, ring_col = pos
@@ -96,6 +95,19 @@ class BoardRenderer:
         for row in range(5):
             for col in range(5):
                 self._draw_inner_cell_level2(row, col, inner_board[row][col])
+    
+    def draw_level3_board(self, inner_board, outer_ring, hover_cell = None):
+        for pos, value in outer_ring.items():
+            ring_row, ring_col = pos
+            is_corner = self._is_corner_cell(ring_row, ring_col)
+            self._draw_ring_cell(ring_row, ring_col, value, False, is_corner)
+            
+        #draw inner 5x5 board (offset by 1 in the 7x7 grid)
+        for row in range(5):
+            for col in range(5):
+                
+                is_hover = hover_cell == (row + 1, col + 1)
+                self._draw_inner_cell_level2(row, col, inner_board[row][col], is_hover)
                 
     def _draw_cell(self, row, col, value, is_last=False, is_hover=False):
         #calculate cell position
@@ -154,7 +166,7 @@ class BoardRenderer:
             text_rect = text.get_rect(center=rect.center)
             self.screen.blit(text, text_rect)
             
-    def _draw_inner_cell_level2(self, inner_row, inner_col, value):
+    def _draw_inner_cell_level2(self, inner_row, inner_col, value, is_hover=False):
         #inner board is offset by 1 in 7x7 grid
         grid_row = inner_row + 1
         grid_col = inner_col + 1
@@ -163,8 +175,13 @@ class BoardRenderer:
         y = self.board_offset_y + grid_row * self.cell_size
         rect = pygame.Rect(x, y, self.cell_size, self.cell_size)
         
+        if is_hover and value == 0:
+            color = CELL_HOVER
+        else:
+            color = INNER_BOARD_LOCKED
+        
         #inner board cells are locked in level 2
-        pygame.draw.rect(self.screen, INNER_BOARD_LOCKED, rect)
+        pygame.draw.rect(self.screen, color, rect)
         pygame.draw.rect(self.screen, GRID_LINE, rect, 2)
         
         #draw number (blue text for inner board)
@@ -175,7 +192,7 @@ class BoardRenderer:
             
     def get_cell_at_pos(self, mouse_x, mouse_y, level=1):
         #convert mouse position to board cell coordinates
-        if level == 1:
+        if level != 2:
             grid_size = 5
         else:
             grid_size = 7
