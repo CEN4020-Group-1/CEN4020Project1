@@ -2,6 +2,7 @@
 
 import random
 
+
 class GameState:
     def __init__(self):
         self.level = 1                                      #current level (1 or 2)
@@ -134,9 +135,11 @@ class GameState:
             
             if last_action.scored:
                 self.score -= 1
-            
+        
+        elif self.current_num == 2: return
+        
         #In lv 2 I gotta pay attention to current num
-        elif self.current_num == 2:
+        elif self.level == 2:
             #Current number is ahead of it's previous action by 1
             #Accounting for array starting at 0, previous action is current num - 2
             last_action = self.move_history.get_action(self.current_num - 2)
@@ -147,7 +150,7 @@ class GameState:
             self.current_num -= 1
             self.last_pos = (penult_action.inner_pos_x, penult_action.inner_pos_y)
         
-        elif self.current_num == 3:
+        elif self.level == 3:
             last_action = self.move_history.get_action(self.current_num - 2)
             penult_action = self.move_history.get_action(self.current_num - 3)
             
@@ -161,7 +164,7 @@ class GameState:
                 last_action.lv3_scored = False
     
     def reset_lv2(self):
-        for i in range(self.current_num - 1):
+        for i in range(self.current_num - 2):
             self.undo()
             
 class History:

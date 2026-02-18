@@ -165,7 +165,7 @@ class GameWindow:
             return
         
         #undo - only allow if more than just "1" is placed (current_num > 2) and game not won
-        if self.btn_undo.is_clicked(mouse_pos) and self.game_state.current_num > 2 and not self.game_state.win:
+        if self.btn_undo.is_clicked(mouse_pos) and not self.game_state.win:
             self.game_state.undo()
         
         #clear - disabled on win screen
@@ -173,7 +173,9 @@ class GameWindow:
             if self.game_state.level == 1:
                 self.game_state.reset_level1()
             else:
+                print("AJJHOAISHDOHAOH")
                 self.game_state.reset_lv2()
+                self.game_state.board
         
         #check board click
         if self.game_state.win:
@@ -188,7 +190,7 @@ class GameWindow:
             if cell:
                 self._handle_level2_click(cell)
         else:
-            cell.self.render.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
+            cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
             if cell:
                 self._handle_level3_click(cell)
             
@@ -313,7 +315,7 @@ class GameWindow:
             self._log_completion(2)
             self.level2_logged = True
         
-        completed_ring = [row[:] = for row in self.game_state.outer_ring]
+        completed_ring = [row[:] for row in self.game_state.outer_ring]
         
         self.game_state.start_level3(completed_ring)
         self._update_window_title()
