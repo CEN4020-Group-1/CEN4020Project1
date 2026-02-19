@@ -188,7 +188,6 @@ class GameWindow:
         else:
             cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=3)
             if cell:
-                print("CELL: ", cell)
                 self._handle_level3_click(cell)
             
                     

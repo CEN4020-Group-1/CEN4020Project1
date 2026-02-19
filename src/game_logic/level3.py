@@ -38,12 +38,6 @@ class Level3Logic:
         outer_y, outer_x = self.state.find_outer_position(self.state.current_num - 1)
         
         #Check if cell aligns with ring row, col, diagonal or antidiagonal
-        print(
-            col == outer_x - 1,
-            row == outer_y - 1,
-            self._is_on_diagonal(row, col, outer_x, outer_y),
-            self._is_on_anti_diagonal(row, row, outer_x, outer_y))
-        
         ring_aligned = (
                         col == outer_x - 1 or
                         row == outer_y - 1 or
