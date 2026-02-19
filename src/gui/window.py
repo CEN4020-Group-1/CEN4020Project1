@@ -141,10 +141,7 @@ class GameWindow:
             btn.check_hover(mouse_pos)
             
         #update hover cell
-        if self.game_state.level == 1:
-            self.hover_cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
-        else:
-            self.hover_cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=2)
+        self.hover_cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], self.game_state.level)
             
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -189,7 +186,7 @@ class GameWindow:
             if cell:
                 self._handle_level2_click(cell)
         else:
-            cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
+            cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=3)
             if cell:
                 print("CELL: ", cell)
                 self._handle_level3_click(cell)
@@ -256,6 +253,9 @@ class GameWindow:
                 invalid_sound.play()
             elif error == "not_adjacent":
                 self.show_message("Must be adjacent to previous number!")
+                invalid_sound.play()
+            elif error == "outside_ring_position":
+                self.show_message("Must be aligned with ring position!")
                 invalid_sound.play()
                 
     def _update(self):

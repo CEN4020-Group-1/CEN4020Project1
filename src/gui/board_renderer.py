@@ -106,7 +106,7 @@ class BoardRenderer:
         for row in range(5):
             for col in range(5):
                 
-                is_hover = hover_cell == (row + 1, col + 1)
+                is_hover = hover_cell == (row, col)
                 self._draw_inner_cell_level2(row, col, inner_board[row][col], is_hover)
                 
     def _draw_cell(self, row, col, value, is_last=False, is_hover=False):
@@ -192,7 +192,7 @@ class BoardRenderer:
             
     def get_cell_at_pos(self, mouse_x, mouse_y, level=1):
         #convert mouse position to board cell coordinates
-        if level != 2:
+        if level == 1:
             grid_size = 5
         else:
             grid_size = 7
@@ -200,8 +200,14 @@ class BoardRenderer:
         col = (mouse_x - self.board_offset_x) // self.cell_size
         row = (mouse_y - self.board_offset_y) // self.cell_size
         
+        if level == 3:
+            row -= 1
+            col -= 1
+            grid_size = 5
+            
         if 0 <= row < grid_size and 0 <= col < grid_size:
             return (int(row), int(col))
+            
         return None
         
     def draw_score(self, score, x=50, y=50):

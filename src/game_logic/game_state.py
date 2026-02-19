@@ -98,6 +98,7 @@ class GameState:
         return None
     
     def find_outer_position(self, num):
+        self.move_history.print_history()
         return self.move_history.get_action(num).outer_pos
     
     def get_state_dict(self):   #get state as dictionary for saving
@@ -155,7 +156,11 @@ class GameState:
             last_action = self.move_history.get_action(self.current_num - 2)
             penult_action = self.move_history.get_action(self.current_num - 3)
             
-            self.board[last_action.third_pos[0], last_action.third_pos[1]] = 0
+            print(last_action.third_pos)
+            row, col = last_action.third_pos
+            print(row, col)
+            
+            self.board[row, col] = 0
             last_action.edit_lv3((-1, -1))
             self.current_num -= 1
             self.last_pos = (penult_action.third_pos[0], penult_action.third_pos[1])
