@@ -202,10 +202,10 @@ class GameState:
         else:
             self.auto_completed_from[0] = self.current_num
         
-        if self.level == 3:
-            self.lv3_retread_complete(level_class)
-            return True
-        elif self.backtrack_complete(level_class):
+        #if self.level == 3:
+        #    self.lv3_retread_complete(level_class)
+        #    return True
+        if self.backtrack_complete(level_class):
             return True
         else:
             if self.level == 2:

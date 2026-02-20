@@ -21,7 +21,6 @@ class Level2Logic:
     def get_valid_cells(self):   #get valid outer ring cells for placing a number
         #find where this number is on the inner board
         inner_pos = self._get_inner_board_position(self.state.current_num)
-        print(inner_pos)
         if inner_pos is None:
             return []
         
