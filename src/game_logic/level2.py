@@ -6,11 +6,7 @@ class Level2Logic:
         self.state = game_state   #reference to shared game state
         
     def _get_inner_board_position(self, num):   #find position of number on inner 5x5 board
-        for row in range(5):
-            for col in range(5):
-                if self.state.board[row][col] == num:
-                    return (row, col)
-        return None
+        return self.state.find_inner_position(num - 2) #Account for the array starting at 0 and the lack of the first value's position
     
     def _inner_to_outer_coords(self, inner_row, inner_col):   #convert inner board coords to outer 7x7 coords
         #inner board is offset by 1 in the 7x7 grid
@@ -24,7 +20,6 @@ class Level2Logic:
     
     def get_valid_cells(self):   #get valid outer ring cells for placing a number
         #find where this number is on the inner board
-        print("CURRENT NUM: ", self.state.current_num)
         inner_pos = self._get_inner_board_position(self.state.current_num)
         if inner_pos is None:
             return []

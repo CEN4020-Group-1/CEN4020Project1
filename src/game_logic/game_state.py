@@ -101,6 +101,10 @@ class GameState:
                     return (row, col)
         return None
     
+    def find_inner_position(self, num): #I don't want to go through the entire board every time I search for the backtrack algorithm
+        action = self.move_history.get_action(num)
+        return (action.inner_pos_x, action.inner_pos_y)
+    
     def find_outer_position(self, num):
         return self.move_history.get_action(num).outer_pos
     
@@ -198,7 +202,14 @@ class GameState:
         else:
             self.auto_completed_from[0] = self.current_num
         
-        return self.backtrack_complete(level_class)
+        if self.backtrack_complete(level_class):
+            return True
+        else:
+            if self.level == 2:
+                self.auto_completed_from[1] = -1
+            else:
+                self.auto_completed_from[0] = -1
+            return False
     
     def auto_undo(self):
         if self.is_auto_completed(self.current_num, self.level == 2):
@@ -214,7 +225,8 @@ class GameState:
         for cell in valid_cells:
             row, col = cell
             level_class.place_number(row, col)
-            #print("%d was placed in (%d,%d)" % (current, row, col))
+            if self.level == 3:
+                print("%d was placed in (%d,%d)" % (current, row, col))
 
             if self.backtrack_complete(level_class):
                 return True
