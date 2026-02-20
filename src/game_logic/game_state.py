@@ -202,14 +202,17 @@ class GameState:
         else:
             self.auto_completed_from[0] = self.current_num
         
-        if self.backtrack_complete(level_class):
+        if self.level == 3:
+            self.lv3_retread_complete(level_class)
+            return True
+        elif self.backtrack_complete(level_class):
             return True
         else:
             if self.level == 2:
                 self.auto_completed_from[1] = -1
             else:
                 self.auto_completed_from[0] = -1
-            return False
+        return False
     
     def auto_undo(self):
         if self.is_auto_completed(self.current_num, self.level == 2):
@@ -235,6 +238,10 @@ class GameState:
             self.auto_undo()
 
         return False
+
+    def lv3_retread_complete(self, level_class):
+        for action in self.move_history.arr:
+            level_class.place_number(action.inner_pos_x, action.inner_pos_y)
                    
 class History:
     def __init__(self):
