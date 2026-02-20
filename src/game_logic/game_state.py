@@ -13,8 +13,10 @@ class GameState:
         self.last_pos = None                                #position of last placed number
         self.original_one_pos = None                        #original position of "1" for clear functionality
         self.game_over = False                              #game over flag
+        self.auto_completed_from = [-1, -1]                 #If this number is -1, ignore it
         self.win = False
         self.move_history = History()
+        self.auto_history = History()
     
     def reset_level1(self):   #reset for a new level 1 game (keeps "1" in original position per story 4)
         self.level = 1
@@ -23,7 +25,9 @@ class GameState:
         self.score = 0
         self.game_over = False
         self.win = False
+        self.auto_completed_from[0] = -1
         self.move_history.clear_history()
+        self.auto_history.clear_history()
         
         #restore "1" to its original position (story 4 requirement)
         if self.original_one_pos:
@@ -43,7 +47,9 @@ class GameState:
         self.score = 0
         self.game_over = False
         self.win = False
+        self.auto_completed_from[0] = -1
         self.move_history.clear_history()
+        self.auto_history.clear_history()
         
         #place "1" randomly and save original position
         row = random.randint(0, 4)
@@ -70,6 +76,7 @@ class GameState:
         self.board[self.original_one_pos[0]][self.original_one_pos[1]] = 1 #1st num remains as always
         self.current_num = 2
         self.last_pos = (self.original_one_pos[0],self.original_one_pos[1])
+        self.auto_completed_from[0] = -1
         self.game_over = False
         self.win = False
     
@@ -108,7 +115,8 @@ class GameState:
             'current_num': self.current_num,
             'score': self.score,
             'last_pos': self.last_pos,
-            'move_history': self.move_history
+            'move_history': self.move_history,
+            'auto_completed_from' : self.auto_completed_from
         }
     
     def set_state_dict(self, state):   #restore state from dictionary
@@ -119,6 +127,7 @@ class GameState:
         self.score = state['score']
         self.last_pos = state['last_pos']
         self.move_history = state['board_history']
+        self.auto_completed_from = state['auto_completed_from']
         self.game_over = False
         self.win = False
     
@@ -174,7 +183,52 @@ class GameState:
     def reset_lv2(self):
         for i in range(self.current_num - 2):
             self.undo()
+    
+    def is_auto_completed(self, num, is_outer=False):
+        if is_outer:
+            checking = self.auto_completed_from[1]
+        else:
+            checking = self.auto_completed_from[0]
+        
+        if checking == -1:
+            return False
+        
+        return checking >= num
+    
+    def autocomplete(self, level_class):
+        if self.level == 2:
+            self.auto_completed_from[1] = self.current_num
+        else:
+            self.auto_completed_from[0] = self.current_num
+        
+        self.backtrack_complete(level_class)
+    
+    def auto_undo(self):
+        if self.is_auto_completed(self.current_num, self.level == 2):
+           self.undo()
+    
+    def backtrack_complete(self, level_class):
+        if self.current_num == 25:
+            return True
+        
+        current = self.current_num
+        valid_cells = level_class.get_valid_cells()
+        
+        for cell in valid_cells:
+            row, col = cell
+            level_class.place_number(row, col)
             
+            if self.backtrack_complete(self, level_class):
+                print("%d was placed in (%d,%d)", current, row, col)
+                return True
+            
+            print("%d: Found nothing in (%d, %d)", current, row, col)
+            self.auto_undo()
+
+        return False
+        
+       
+         
 class History:
     def __init__(self):
         self.arr = []

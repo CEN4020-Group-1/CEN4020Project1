@@ -98,17 +98,18 @@ class GameWindow:
         #board ends at ~610 for level 2 (120 offset + 7*70 cells), so start buttons at 620
         row1_y = 620
         row1_total_width = 2 * btn_width + btn_spacing
-        row1_start_x = (self.width - row1_total_width) // 2
+        row1_start_x = (self.width - row1_total_width) // 2.67
         
         self.btn_undo = Button(row1_start_x, row1_y, btn_width, btn_height, "Undo", self.small_font)
         self.btn_clear = Button(row1_start_x + btn_width + btn_spacing, row1_y, btn_width, btn_height, "Clear", self.small_font)
+        self.btn_auto = Button(row1_start_x + 2 * (btn_width + btn_spacing), row1_y, btn_width, btn_height, "Auto", self.small_font)
         
         #row 2: Quit button (centered, red)
         row2_y = row1_y + btn_height + 8
         quit_x = (self.width - btn_width) // 2
         self.btn_quit = Button(quit_x, row2_y, btn_width, btn_height, "Quit", self.small_font, danger=True)
         
-        self.buttons = [self.btn_undo, self.btn_clear, self.btn_quit]
+        self.buttons = [self.btn_undo, self.btn_clear, self.btn_auto, self.btn_quit]
         
     def set_game_components(self, game_state, level1_logic, level2_logic, level3_logic):
         #set game components from main
@@ -172,6 +173,9 @@ class GameWindow:
             else:
                 self.game_state.reset_lv2()
                 self.game_state.board
+        
+        if self.btn_auto.is_clicked(mouse_pos) and not self.game_state.win:
+            print("PRESS!")
         
         #check board click
         if self.game_state.win:

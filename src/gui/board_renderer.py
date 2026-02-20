@@ -3,7 +3,6 @@
 import pygame
 from .colors import *
 
-
 class BoardRenderer:
     def __init__(self, screen, cell_size=70, board_offset_y=120):
         self.screen = screen
@@ -109,7 +108,7 @@ class BoardRenderer:
                 is_hover = hover_cell == (row, col)
                 self._draw_inner_cell_level2(row, col, inner_board[row][col], is_hover)
                 
-    def _draw_cell(self, row, col, value, is_last=False, is_hover=False):
+    def _draw_cell(self, row, col, value, is_last=False, is_hover=False, is_auto=False):
         #calculate cell position
         x = self.board_offset_x + col * self.cell_size
         y = self.board_offset_y + row * self.cell_size
@@ -131,7 +130,10 @@ class BoardRenderer:
         
         #draw number if cell is filled (blue text for inner board)
         if value != 0:
-            text = self.font.render(str(value), True, TEXT_BLUE)
+            text_color = TEXT_BLUE
+            if is_auto:
+                text_color = TEXT_RED
+            text = self.font.render(str(value), True, text_color)
             text_rect = text.get_rect(center=rect.center)
             self.screen.blit(text, text_rect)
             
@@ -140,7 +142,7 @@ class BoardRenderer:
         corners = [(0, 0), (0, 6), (6, 0), (6, 6)]
         return (ring_row, ring_col) in corners
         
-    def _draw_ring_cell(self, ring_row, ring_col, value, is_hover=False, is_corner=False):
+    def _draw_ring_cell(self, ring_row, ring_col, value, is_hover=False, is_corner=False, is_auto=False):
         #calculate position in 7x7 grid
         x = self.board_offset_x + ring_col * self.cell_size
         y = self.board_offset_y + ring_row * self.cell_size
@@ -162,11 +164,14 @@ class BoardRenderer:
         
         #draw number if cell is filled
         if value != 0:
-            text = self.font.render(str(value), True, TEXT_DARK)
+            text_color = TEXT_DARK
+            if is_auto:
+                text_color = TEXT_RED
+            text = self.font.render(str(value), True, text_color)
             text_rect = text.get_rect(center=rect.center)
             self.screen.blit(text, text_rect)
             
-    def _draw_inner_cell_level2(self, inner_row, inner_col, value, is_hover=False):
+    def _draw_inner_cell_level2(self, inner_row, inner_col, value, is_hover=False, is_auto = False):
         #inner board is offset by 1 in 7x7 grid
         grid_row = inner_row + 1
         grid_col = inner_col + 1
@@ -186,7 +191,11 @@ class BoardRenderer:
         
         #draw number (blue text for inner board)
         if value != 0:
-            text = self.font.render(str(value), True, TEXT_BLUE)
+            text_color = TEXT_BLUE
+            if is_auto:
+                text_color = TEXT_RED
+            
+            text = self.font.render(str(value), True, text_color)
             text_rect = text.get_rect(center=rect.center)
             self.screen.blit(text, text_rect)
             
