@@ -175,7 +175,6 @@ class GameWindow:
                 self.game_state.board
         
         if self.btn_auto.is_clicked(mouse_pos) and not self.game_state.win:
-            print("PRESS!")
             match self.game_state.level:
                 case 1:
                     logic = self.level1_logic
@@ -184,8 +183,9 @@ class GameWindow:
                 case 3: 
                     logic = self.level3_logic
             
-            self.game_state.autocomplete(logic)
-            
+            if not self.game_state.autocomplete(logic):
+                self.show_message("Board is impossible to complete from here")
+                invalid_sound.play()
         
         #check board click
         if self.game_state.win:
@@ -285,8 +285,7 @@ class GameWindow:
         #log Level 2 completion (Story 7)
         if self.game_state.level == 2 and self.game_state.win:
             self._transition_to_level3()
-        
-            
+              
     def _log_completion(self, level):
         #log game completion for Story 7 with human-readable board format
         if level == 1:
@@ -358,19 +357,22 @@ class GameWindow:
             self.renderer.draw_level1_board(
                 self.game_state.board,
                 last_pos=self.game_state.last_pos,
-                hover_cell=self.hover_cell
+                hover_cell=self.hover_cell,
+                auto_completed_from=self.game_state.auto_completed_from[0]
             )
         elif self.game_state.level == 2:
             self.renderer.draw_level2_board(
                 self.game_state.board,
                 self.game_state.outer_ring,
-                hover_cell=self.hover_cell
+                hover_cell=self.hover_cell,
+                auto_completed_from=self.game_state.auto_completed_from
             )
         else:
             self.renderer.draw_level3_board(
                 self.game_state.board,
                 self.game_state.outer_ring,
-                hover_cell=self.hover_cell
+                hover_cell=self.hover_cell,
+                auto_completed_from=self.game_state.auto_completed_from
             )
             
         #draw buttons

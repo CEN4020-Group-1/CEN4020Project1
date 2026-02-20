@@ -16,7 +16,6 @@ class GameState:
         self.auto_completed_from = [-1, -1]                 #If this number is -1, ignore it
         self.win = False
         self.move_history = History()
-        self.auto_history = History()
     
     def reset_level1(self):   #reset for a new level 1 game (keeps "1" in original position per story 4)
         self.level = 1
@@ -27,7 +26,6 @@ class GameState:
         self.win = False
         self.auto_completed_from[0] = -1
         self.move_history.clear_history()
-        self.auto_history.clear_history()
         
         #restore "1" to its original position (story 4 requirement)
         if self.original_one_pos:
@@ -49,7 +47,6 @@ class GameState:
         self.win = False
         self.auto_completed_from[0] = -1
         self.move_history.clear_history()
-        self.auto_history.clear_history()
         
         #place "1" randomly and save original position
         row = random.randint(0, 4)
@@ -201,39 +198,32 @@ class GameState:
         else:
             self.auto_completed_from[0] = self.current_num
         
-        print("Auto completed from: ", self.auto_completed_from)
-        
-        self.backtrack_complete(level_class)
+        return self.backtrack_complete(level_class)
     
     def auto_undo(self):
-        print(self.is_auto_completed(self.current_num, self.level == 2))
         if self.is_auto_completed(self.current_num, self.level == 2):
            self.undo()
     
     def backtrack_complete(self, level_class):
         if self.current_num >= 26:
-            print(self.current_num)
             return True
         
         current = self.current_num
         valid_cells = level_class.get_valid_cells()
         
-        print(current, valid_cells)
         for cell in valid_cells:
             row, col = cell
             level_class.place_number(row, col)
-            print("%d was placed in (%d,%d)" % (current, row, col))
+            #print("%d was placed in (%d,%d)" % (current, row, col))
 
             if self.backtrack_complete(level_class):
                 return True
             
-            print("%d: Found nothing in (%d, %d)" % (current, row, col))
+            #print("%d: Found nothing in (%d, %d)" % (current, row, col))
             self.auto_undo()
 
         return False
-        
-       
-         
+                   
 class History:
     def __init__(self):
         self.arr = []

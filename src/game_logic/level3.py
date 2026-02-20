@@ -49,15 +49,17 @@ class Level3Logic:
         
         return (True, None)
         
-    
-    
-    def _get_valid_cells(self):   #get list of all valid cells for current move
+    def get_valid_cells(self):   #get list of all valid cells for current move
         valid = []
         outer_x, outer_y = self.state.find_outer_position(self.state.current_num)
+        
+        print(self._is_orthoginal_cell(outer_x), self._is_orthoginal_cell(outer_y))
+        
         #Check which row/col can be skipped over with current outer ring position
         if self._is_orthoginal_cell(outer_x): #Check if outer cell is horizontal
             current_col = outer_y
             for row in range(5):
+                print(row, current_col)
                 is_valid, _ = self._is_valid_move(row, current_col)
                 if is_valid:
                     valid.append((row,current_col))
@@ -65,6 +67,7 @@ class Level3Logic:
         elif self._is_orthoginal_cell(outer_y): #Check if outer cel is vertical
             current_row = outer_x
             for col in range(5):
+                print(current_row, col)
                 is_valid, _ = self._is_valid_move(current_row, col)
                 if is_valid:
                     valid.append((current_row,col))
@@ -81,6 +84,8 @@ class Level3Logic:
                 is_valid, _ = self._is_valid_move(row, current_col)
                 if is_valid(row, current_col):
                     valid.append((row, current_col)) 
+        
+        print("VALID: ", valid)
         
         return valid
     

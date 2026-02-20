@@ -22,9 +22,10 @@ class Level2Logic:
     def _is_on_anti_diagonal(self, row, col):   #check if position is on anti-diagonal (top-right to bottom-left)
         return row + col == 4
     
-    def get_valid_ring_cells(self, num):   #get valid outer ring cells for placing a number
+    def get_valid_cells(self):   #get valid outer ring cells for placing a number
         #find where this number is on the inner board
-        inner_pos = self._get_inner_board_position(num)
+        print("CURRENT NUM: ", self.state.current_num)
+        inner_pos = self._get_inner_board_position(self.state.current_num)
         if inner_pos is None:
             return []
         
@@ -83,7 +84,7 @@ class Level2Logic:
             return (False, "cell_occupied")
         
         #check if this is a valid cell for the current number
-        valid_cells = self.get_valid_ring_cells(self.state.current_num)
+        valid_cells = self.get_valid_cells()
         if pos in valid_cells:
             return (True, None)
         
@@ -111,7 +112,7 @@ class Level2Logic:
         return (True, None)
     
     def has_valid_moves(self):   #check if there are any valid moves for current number
-        return len(self.get_valid_ring_cells(self.state.current_num)) > 0
+        return len(self.get_valid_cells()) > 0
     
     def get_ring_cell_positions(self):   #get all ring cell positions for rendering
         return list(self.state.outer_ring.keys())

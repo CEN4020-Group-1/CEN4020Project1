@@ -73,40 +73,44 @@ class BoardRenderer:
         self.screen.blit(level_label, (width - 80, 12))
         self.screen.blit(level_value, (width - 62, 32))
         
-    def draw_level1_board(self, board, last_pos=None, hover_cell=None):
+    def draw_level1_board(self, board, last_pos=None, hover_cell=None, auto_completed_from=-1):
         #draw 5x5 board for level 1
         for row in range(5):
             for col in range(5):
                 self._draw_cell(row, col, board[row][col], 
                                is_last=(last_pos == (row, col)),
-                               is_hover=(hover_cell == (row, col)))
+                               is_hover=(hover_cell == (row, col)),
+                               is_auto=(self._is_auto(auto_completed_from, board[row][col])))
                                
-    def draw_level2_board(self, inner_board, outer_ring, hover_cell=None):
+    def draw_level2_board(self, inner_board, outer_ring, hover_cell=None, auto_completed_from=[-1,-1]):
         #draw 7x7 board for level 2 (inner board + outer ring)
         #draw outer ring cells first
         for pos, value in outer_ring.items():
             ring_row, ring_col = pos
             is_hover = hover_cell == pos
             is_corner = self._is_corner_cell(ring_row, ring_col)
-            self._draw_ring_cell(ring_row, ring_col, value, is_hover, is_corner)
+            is_auto = self._is_auto(auto_completed_from[1], value)
+            self._draw_ring_cell(ring_row, ring_col, value, is_hover, is_corner, is_auto)
             
         #draw inner 5x5 board (offset by 1 in the 7x7 grid)
         for row in range(5):
             for col in range(5):
-                self._draw_inner_cell_level2(row, col, inner_board[row][col])
+                self._draw_inner_cell_level2(row, col, inner_board[row][col], 
+                                        is_auto=(self._is_auto(auto_completed_from[0], inner_board[row][col])))
     
-    def draw_level3_board(self, inner_board, outer_ring, hover_cell = None):
+    def draw_level3_board(self, inner_board, outer_ring, hover_cell=None, auto_completed_from=[-1,-1]):
         for pos, value in outer_ring.items():
             ring_row, ring_col = pos
             is_corner = self._is_corner_cell(ring_row, ring_col)
-            self._draw_ring_cell(ring_row, ring_col, value, False, is_corner)
+            is_auto = self._is_auto(auto_completed_from[1], value)
+            self._draw_ring_cell(ring_row, ring_col, value, False, is_corner, is_auto)
             
         #draw inner 5x5 board (offset by 1 in the 7x7 grid)
         for row in range(5):
             for col in range(5):
-                
                 is_hover = hover_cell == (row, col)
-                self._draw_inner_cell_level2(row, col, inner_board[row][col], is_hover)
+                is_auto = self._is_auto(auto_completed_from[0], inner_board[row][col])
+                self._draw_inner_cell_level2(row, col, inner_board[row][col], is_hover, is_auto)
                 
     def _draw_cell(self, row, col, value, is_last=False, is_hover=False, is_auto=False):
         #calculate cell position
@@ -141,7 +145,12 @@ class BoardRenderer:
         #check if cell is a corner of the 7x7 grid
         corners = [(0, 0), (0, 6), (6, 0), (6, 6)]
         return (ring_row, ring_col) in corners
-        
+    
+    def _is_auto(self, auto_complete, value):
+        if auto_complete == -1:
+            return False
+        return value >= auto_complete
+    
     def _draw_ring_cell(self, ring_row, ring_col, value, is_hover=False, is_corner=False, is_auto=False):
         #calculate position in 7x7 grid
         x = self.board_offset_x + ring_col * self.cell_size
@@ -171,7 +180,7 @@ class BoardRenderer:
             text_rect = text.get_rect(center=rect.center)
             self.screen.blit(text, text_rect)
             
-    def _draw_inner_cell_level2(self, inner_row, inner_col, value, is_hover=False, is_auto = False):
+    def _draw_inner_cell_level2(self, inner_row, inner_col, value, is_hover=False, is_auto=False):
         #inner board is offset by 1 in 7x7 grid
         grid_row = inner_row + 1
         grid_col = inner_col + 1
