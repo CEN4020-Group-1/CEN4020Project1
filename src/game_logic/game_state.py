@@ -193,7 +193,7 @@ class GameState:
         if checking == -1:
             return False
         
-        return checking >= num
+        return num >= checking
     
     def autocomplete(self, level_class):
         if self.level == 2:
@@ -201,28 +201,33 @@ class GameState:
         else:
             self.auto_completed_from[0] = self.current_num
         
+        print("Auto completed from: ", self.auto_completed_from)
+        
         self.backtrack_complete(level_class)
     
     def auto_undo(self):
+        print(self.is_auto_completed(self.current_num, self.level == 2))
         if self.is_auto_completed(self.current_num, self.level == 2):
            self.undo()
     
     def backtrack_complete(self, level_class):
-        if self.current_num == 25:
+        if self.current_num >= 26:
+            print(self.current_num)
             return True
         
         current = self.current_num
         valid_cells = level_class.get_valid_cells()
         
+        print(current, valid_cells)
         for cell in valid_cells:
             row, col = cell
             level_class.place_number(row, col)
-            
-            if self.backtrack_complete(self, level_class):
-                print("%d was placed in (%d,%d)", current, row, col)
+            print("%d was placed in (%d,%d)" % (current, row, col))
+
+            if self.backtrack_complete(level_class):
                 return True
             
-            print("%d: Found nothing in (%d, %d)", current, row, col)
+            print("%d: Found nothing in (%d, %d)" % (current, row, col))
             self.auto_undo()
 
         return False

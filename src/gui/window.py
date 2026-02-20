@@ -176,6 +176,16 @@ class GameWindow:
         
         if self.btn_auto.is_clicked(mouse_pos) and not self.game_state.win:
             print("PRESS!")
+            match self.game_state.level:
+                case 1:
+                    logic = self.level1_logic
+                case 2:
+                    logic = self.level2_logic
+                case 3: 
+                    logic = self.level3_logic
+            
+            self.game_state.autocomplete(logic)
+            
         
         #check board click
         if self.game_state.win:
