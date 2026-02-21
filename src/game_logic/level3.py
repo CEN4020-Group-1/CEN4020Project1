@@ -38,7 +38,6 @@ class Level3Logic:
         row_diff = abs(row - last_row)
         col_diff = abs(col - last_col)
         if not(row_diff <= 1 and col_diff <= 1 and (row_diff + col_diff) > 0):
-            print(self.state.last_pos)
             return (False, "not_adjacent") 
         
         #Account for array starting at 0
@@ -63,25 +62,23 @@ class Level3Logic:
         #Check which row/col can be skipped over with current outer ring position
         if self._is_orthoginal_cell(outer_x): #Check if outer cel is vertical
             current_col = outer_x - 1 #Offset by since ring is 7x7
-            #current_col = outer_x
             for row in range(5):
-                print(current_col, row, self._is_valid_move(row, current_col))
+                #print(current_col, row, self._is_valid_move(row, current_col))
                 is_valid, _ = self._is_valid_move(row, current_col)
                 if is_valid:
                     valid.append((row, current_col))
         
         elif self._is_orthoginal_cell(outer_y): #Check if outer cell is horizontal
             current_row = outer_y - 1 #Offset by since ring is 7x7
-            #current_row = outer_y
             for col in range(5):
-                print(col, current_row, self._is_valid_move(current_row, col))
+                #print(col, current_row, self._is_valid_move(current_row, col))
                 is_valid, _ = self._is_valid_move(current_row, col)
                 if is_valid:
                     valid.append((current_row, col))
         
         elif self._is_outer_diagonal(outer_x, outer_y):#Check if outer ring pos is diagonal
             for offset in range(5):
-                print(offset, offset, self._is_valid_move(offset, offset))
+                #print(offset, offset, self._is_valid_move(offset, offset))
                 is_valid, _ = self._is_valid_move(offset, offset)
                 if is_valid:
                     valid.append((offset, offset))
@@ -89,12 +86,10 @@ class Level3Logic:
         elif self._is_outer_anti_diagonal(outer_x, outer_y): #Check if it's anti diagonal
             for row in range(5):
                 current_col = 4 - row
-                print(current_col, row, self._is_valid_move(row, current_col))
+                #print(current_col, row, self._is_valid_move(row, current_col))
                 is_valid, _ = self._is_valid_move(row, current_col)
                 if is_valid:
                     valid.append((row, current_col)) 
-        
-        print("VALID: ", valid)
         
         return valid
     

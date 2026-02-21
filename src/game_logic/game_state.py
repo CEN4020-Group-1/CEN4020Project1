@@ -49,8 +49,10 @@ class GameState:
         self.move_history.clear_history()
         
         #place "1" randomly and save original position
-        row = random.randint(0, 4)
-        col = random.randint(0, 4)
+        #row = random.randint(0, 4)
+        #col = random.randint(0, 4)
+        row = 3
+        col = 0
         self.board[row][col] = 1
         self.last_pos = (row, col)
         self.original_one_pos = (row, col)   #save for clear functionality (story 4)
@@ -197,15 +199,18 @@ class GameState:
         return num >= checking
     
     def autocomplete(self, level_class):
+        ring_check = {}
+        
         if self.level == 2:
             self.auto_completed_from[1] = self.current_num
+            ring_check = self.make_ring_check()
         else:
             self.auto_completed_from[0] = self.current_num
         
         #if self.level == 3:
         #    self.lv3_retread_complete(level_class)
         #    return True
-        if self.backtrack_complete(level_class):
+        if self.backtrack_complete(level_class, ring_check):
             return True
         else:
             if self.level == 2:
@@ -218,25 +223,108 @@ class GameState:
         if self.is_auto_completed(self.current_num, self.level == 2):
            self.undo()
     
-    def backtrack_complete(self, level_class):
+    #In a lv 2 board, if empty cells in the ring's col, row or diagonal ever outnumber thier inner baord counterpart
+    #Then that means you've reached a dead end
+    #To optimize the lv2 backteacking algorithm, there will be a check for this
+    def make_ring_check(self):
+        ring_check = {}
+        
+        for i in range(5):
+            ring_check[str("row_%d" % (i+1))] = [5,2]
+            ring_check[str("col_%d" % (i+1))] = [5,2]
+        ring_check[str("diagonal")] = [5,2]
+        ring_check[str("anti")] = [5,2]
+        
+        #The ring check needs to account for the first value on the inner board
+        one_row, one_col = self.original_one_pos
+        
+        if one_row == one_col:
+            ring_check["diagonal"][0] -= 1
+        if one_row + one_col == 6:
+            ring_check["anti"][0] -= 1
+        ring_check[str("col_%d" % (one_col + 1))][0] -= 1
+        ring_check[str("row_%d" % (one_row + 1))][0] -= 1
+        
+        return ring_check
+
+    def is_deadend(self, row, col, ring_check):
+        if row == col and self.single_deadend_check(ring_check["diagonal"]):
+            return True
+        
+        if row + col == 6 and self.single_deadend_check(ring_check["anti"]):
+            return True
+        
+        if row != 0 and row != 6:
+            row_check = ring_check[str("row_%d" % (row))]
+            if self.single_deadend_check(row_check):
+                return True
+        
+        if col != 0 and col != 6:
+            col_check = ring_check[str("col_%d" % (col))]
+            if self.single_deadend_check(col_check):
+                return True
+        
+        return False
+    
+    def single_deadend_check(self, single_item):
+        return single_item[1] > single_item[0]
+    
+    def edit_ring_check(self, num, row, col, ring_check, add=False):
+        mult = 1 if add else -1
+        
+        #Edit inner count by 1 on everything this cell is a part of
+        inner_row, inner_col = self.find_inner_position(num - 1)
+        
+        if inner_row == inner_col:
+            ring_check["diagonal"][0] += 1 * mult
+        if inner_row + inner_col == 6:
+            ring_check["anti"][0] += 1 * mult
+        ring_check[str("col_%d" % (inner_col + 1))][0] += 1 * mult
+        ring_check[str("row_%d" % (inner_row + 1))][0] += 1 * mult 
+        
+        #Edit outer count by 1 on the cell it would get placed on
+        if row == col:
+            ring_check["diagonal"][1] += 1 * mult
+        elif row + col == 6:
+            ring_check["anti"][1] += 1 * mult
+        elif row == 0 or row == 6:
+            ring_check[str("col_%d" % (col))][1] += 1 * mult
+        elif col == 0 or col == 6:
+            ring_check[str("row_%d" % (row))][1] += 1 * mult
+        
+        return ring_check
+    
+    def backtrack_complete(self, level_class, ring_check):
         if self.current_num >= 26:
             return True
         
         current = self.current_num
         valid_cells = level_class.get_valid_cells()
         
-        for cell in valid_cells:
+        for i in range(len(valid_cells)):
+            cell = valid_cells[i]
             row, col = cell
-            level_class.place_number(row, col)
-            if self.level == 3:
-                print("%d was placed in (%d,%d)" % (current, row, col))
 
-            if self.backtrack_complete(level_class):
-                return True
+            if self.level == 2:
+                self.edit_ring_check(current, row, col, ring_check, False)
+                
+                if self.is_deadend(row, col, ring_check):
+                    #print(current, ring_check)
+                    self.edit_ring_check(current, row, col, ring_check, True)
+                    continue
+            
+            #if self.level == 3:
+            #    print("%d was placed in (%d,%d)" % (current, row, col))
+            level_class.place_number(row, col)
+            if self.backtrack_complete(level_class, ring_check):
+                return True    
+            
+            self.edit_ring_check(current, row, col, ring_check, True)
             
             #print("%d: Found nothing in (%d, %d)" % (current, row, col))
             self.auto_undo()
 
+        #If this leads to a dead end, don't check the ith cell in current number anymore
         return False
 
     def lv3_retread_complete(self, level_class):
