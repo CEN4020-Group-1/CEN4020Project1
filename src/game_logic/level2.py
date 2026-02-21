@@ -18,9 +18,11 @@ class Level2Logic:
     def _is_on_anti_diagonal(self, row, col):   #check if position is on anti-diagonal (top-right to bottom-left)
         return row + col == 4
     
-    def get_valid_cells(self):   #get valid outer ring cells for placing a number
+    def get_valid_cells(self, num = -1):   #get valid outer ring cells for placing a number
+        if num == -1: #Allow it to have a specific num in case I want to check non-chronologically
+            num = self.state.current_num
         #find where this number is on the inner board
-        inner_pos = self._get_inner_board_position(self.state.current_num)
+        inner_pos = self._get_inner_board_position(num)
         if inner_pos is None:
             return []
         

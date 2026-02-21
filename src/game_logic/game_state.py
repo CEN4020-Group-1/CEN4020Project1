@@ -15,7 +15,7 @@ class GameState:
         self.game_over = False                              #game over flag
         self.auto_completed_from = [-1, -1]                 #If this number is -1, ignore it
         self.win = False
-        self.move_history = History()
+        self.move_history = History()                       
     
     def reset_level1(self):   #reset for a new level 1 game (keeps "1" in original position per story 4)
         self.level = 1
@@ -49,10 +49,11 @@ class GameState:
         self.move_history.clear_history()
         
         #place "1" randomly and save original position
-        #row = random.randint(0, 4)
-        #col = random.randint(0, 4)
-        row = 3
-        col = 0
+        row = random.randint(0, 4)
+        col = random.randint(0, 4)
+        #Number combo below is for testing backtracking
+        #row = 3
+        #col = 0
         self.board[row][col] = 1
         self.last_pos = (row, col)
         self.original_one_pos = (row, col)   #save for clear functionality (story 4)
@@ -294,32 +295,45 @@ class GameState:
         
         return ring_check
     
+    #With 1 at row3 col0, it took around 28 seconds. The rest is near instant
     def backtrack_complete(self, level_class, ring_check):
         if self.current_num >= 26:
             return True
         
         current = self.current_num
         valid_cells = level_class.get_valid_cells()
+        #print(current)
         
         for i in range(len(valid_cells)):
             cell = valid_cells[i]
             row, col = cell
 
             if self.level == 2:
-                self.edit_ring_check(current, row, col, ring_check, False)
-                
-                if self.is_deadend(row, col, ring_check):
-                    #print(current, ring_check)
-                    self.edit_ring_check(current, row, col, ring_check, True)
-                    continue
+               self.edit_ring_check(current, row, col, ring_check, False)
+               
+               if self.is_deadend(row, col, ring_check):
+                   #print(current, ring_check)
+                   #print(current, "DEAD END 1")
+                   self.edit_ring_check(current, row, col, ring_check, True)
+                   continue
             
             #if self.level == 3:
             #    print("%d was placed in (%d,%d)" % (current, row, col))
             level_class.place_number(row, col)
-            if self.backtrack_complete(level_class, ring_check):
+            is_viable = True
+            
+            if self.level == 2:
+                for i in range(current + 1, 26):
+                    if len(level_class.get_valid_cells(i)) == 0:
+                        is_viable = False
+                        #print(current, "DEAD END 2")
+                        break
+            
+            if is_viable and self.backtrack_complete(level_class, ring_check):
                 return True    
             
-            self.edit_ring_check(current, row, col, ring_check, True)
+            if self.level == 2:
+                self.edit_ring_check(current, row, col, ring_check, True)
             
             #print("%d: Found nothing in (%d, %d)" % (current, row, col))
             self.auto_undo()
