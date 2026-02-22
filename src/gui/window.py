@@ -106,7 +106,7 @@ class GameWindow:
         self.btn_clear = Button(row1_start_x + btn_width + btn_spacing, row1_y, btn_width, btn_height, "Clear", self.small_font)
         #User Story 15 Sound On/Off Button
         self.btn_sound_off = Button(50, row1_y - 10, btn_width, btn_height, "-", self.small_font)
-        self.btn_sound_on = Button(225, row1_total_width/2, btn_width + 40, btn_height, "Sound: ON", self.small_font)
+        self.btn_sound_on = Button(225, row1_total_width/2 - 35, btn_width + 40, btn_height, "Sound: ON", self.small_font)
         
         #row 2: Quit button (centered, red)
         row2_y = row1_y + btn_height + 8
@@ -228,18 +228,17 @@ class GameWindow:
         
         if success:
             #placeholder for sound (story 2)
-            valid_sound.playd()
+            valid_sound(self.sound_on)
         else:
+            invalid_sound(self.sound_on)
             #placeholder for error sound (story 6)
             if error == "not_ring_cell":
                 self.show_message("Click on the outer ring!")
-                invalid_sound.play()
             elif error == "cell_occupied":
                 self.show_message("Cell is already occupied!")
-                invalid_sound.play()
             elif error == "invalid_position":
                 self.show_message("Invalid position for this number!")
-                invalid_sound.play()
+
                 
     def _update(self):
         #update game state
