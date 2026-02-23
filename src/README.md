@@ -20,8 +20,8 @@ This is a Pygame-based implementation of the Matrix Game with two levels.
 - story 12: Tightly coupled object definitions
 - story 13: Computer Completed Solution
 - story 14: Product authentication
-- story 15: Team Defined 
-- story 16: Team defined
+- story 15: Sound On/Off
+- story 16: Restart Confirmation
 
 
 ## How to Run
@@ -42,9 +42,10 @@ src/
 │   ├── level1.py        # Level 1 logic (5x5 board)
 │   └── level2.py        # Level 2 logic (outer ring)
 └── gui/
-    ├── window.py        # Main Pygame window and game loop
+    ├── window.py         # Main Pygame window and game loop
     ├── board_renderer.py # Draws boards for both levels
-    └── colors.py        # Color constants
+    ├── sound.py          # Sound constants
+    └── colors.py         # Color constants
 ```
 
 ## Architecture

@@ -25,6 +25,7 @@ class Button:
         self.font = font
         self.is_hovered = False
         self.danger = danger    #use red color for danger buttons like Quit
+        self.show_restart_popup = False #User Story 16 : restart confirmation 
         
     def draw(self, screen):
         #determine button color
@@ -60,9 +61,12 @@ class GameWindow:
         self.clock = pygame.time.Clock()
         self.running = True
         
+        
         #User Story 15: Sound On/Off
         self.sound_on = True
-        
+        #User Story 16
+        self.show_restart_popup = False
+    
         #initialize renderer
         self.renderer = BoardRenderer(self.screen)
         self.renderer.init_fonts()
@@ -119,9 +123,23 @@ class GameWindow:
         quit_x = (self.width - btn_width) // 2
         self.btn_quit = Button(quit_x, row2_y, btn_width, btn_height, "Quit", self.small_font, danger=True)
         
+        
+        #User Story 16 : restart confirmation
+        # restart popup buttons (centered)
+        popup_y = 350
+        popup_btn_w = 80
+        popup_btn_h = 35
+        gap = 20
 
+        center_x = self.width // 2
+        self.btn_restart_yes = Button(center_x - popup_btn_w - gap//2, popup_y,
+                                    popup_btn_w, popup_btn_h, "Yes", self.small_font)
+
+        self.btn_restart_no = Button(center_x + gap//2, popup_y,
+                                    popup_btn_w, popup_btn_h, "No", self.small_font)
+                
         self.buttons = [self.btn_undo, self.btn_clear, self.btn_auto, self.btn_quit, self.btn_sound_on]
-
+        
         
     def set_game_components(self, game_state, level1_logic, level2_logic, level3_logic):
         #set game components from main
@@ -169,22 +187,36 @@ class GameWindow:
                     self.running = False
                     
     def _handle_click(self, mouse_pos):
+        # handle restart popup first
+        if self.show_restart_popup:
+            if self.btn_restart_yes.is_clicked(mouse_pos):
+                self.show_restart_popup = False
+                if self.game_state.level == 1:
+                    self.game_state.reset_level1()
+                else:
+                    self.game_state.reset_lv2()
+            elif self.btn_restart_no.is_clicked(mouse_pos):
+                self.show_restart_popup = False
+            return
         #check button clicks
         if self.btn_quit.is_clicked(mouse_pos):
-            self.running = False
+            self.running = True
             return
         
         #undo - only allow if more than just "1" is placed (current_num > 2) and game not won
         if self.btn_undo.is_clicked(mouse_pos) and not self.game_state.win:
             self.game_state.undo()
         
-        #clear - disabled on win screen
+        #clear - disabled on win screen****
+        # if self.btn_clear.is_clicked(mouse_pos) and not self.game_state.win:
+        #     if self.game_state.level == 1:
+        #         self.game_state.reset_level1()
+        #     else:
+        #         self.game_state.reset_lv2()
+        #         self.game_state.board
         if self.btn_clear.is_clicked(mouse_pos) and not self.game_state.win:
-            if self.game_state.level == 1:
-                self.game_state.reset_level1()
-            else:
-                self.game_state.reset_lv2()
-                self.game_state.board
+            self.show_restart_popup = True
+            return
         
         if self.btn_auto.is_clicked(mouse_pos) and not self.game_state.win:
             match self.game_state.level:
@@ -217,12 +249,15 @@ class GameWindow:
             if cell:
                 self._handle_level3_click(cell)
                 
-        # Sound On/Off Button
+        # User Story 15 : Sound On/Off Button
         if self.btn_sound_on.is_clicked(mouse_pos):
             self.sound_on = not self.sound_on
             self.btn_sound_on.text = "Sound: ON" if self.sound_on else "Sound: OFF"
             return
-            
+        #User Story 16 
+        if self.btn_clear.is_clicked(mouse_pos) and not self.game_state.win:
+            self.show_restart_popup = True
+            return     
                     
     def _handle_level1_click(self, cell):
         row, col = cell
@@ -402,6 +437,10 @@ class GameWindow:
         if self.game_state.win and self.game_state.level == 3:
             self._draw_win_screen()
             
+        # draw restart popup if needed
+        if self.show_restart_popup:
+            self._draw_restart_popup()
+            
         pygame.display.flip()
         
     def _draw_win_screen(self):
@@ -416,3 +455,24 @@ class GameWindow:
         
         self.screen.blit(win_text, win_text.get_rect(center=(self.width // 2, self.height // 2 - 30)))
         self.screen.blit(score_text, score_text.get_rect(center=(self.width // 2, self.height // 2 + 20)))
+        
+    def _draw_restart_popup(self):
+    # dark overlay
+        overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        self.screen.blit(overlay, (0, 0))
+
+        # popup box
+        box_w, box_h = 300, 150
+        box_x = (self.width - box_w) // 2
+        box_y = (self.height - box_h) // 2
+        pygame.draw.rect(self.screen, (240, 240, 240), (box_x, box_y, box_w, box_h), border_radius=10)
+        pygame.draw.rect(self.screen, (60, 60, 60), (box_x, box_y, box_w, box_h), 2, border_radius=10)
+
+        # text
+        text = self.font.render("Restart the game?", True, (0, 0, 0))
+        self.screen.blit(text, text.get_rect(center=(self.width//2, box_y + 40)))
+
+        # draw buttons
+        self.btn_restart_yes.draw(self.screen)
+        self.btn_restart_no.draw(self.screen)
