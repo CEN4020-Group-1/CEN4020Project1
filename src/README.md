@@ -6,14 +6,23 @@ This is a Pygame-based implementation of the Matrix Game with two levels.
 **Implemented User Stories:**
 - Story 1: GUI with click-to-place and random initial placement of 1
 - Story 2: Sound on valid click
+- Story 3: Next number auto-display
 - Story 4: Clear board feature
 - Story 5: Undo/rollback feature
 - Story 6: Sound on invalid click
+- Story 7: Save/log completed games
 - Story 8: Level 2 expansion with outer ring
 
 **Left for teammates to implement:**
-- Story 3: Next number auto-display
-- Story 7: Save/log completed games
+- story 9: Level 3 expansion 
+- story 10: Point rewards for Level 2 and 3
+- story 11: Time limit implementation
+- story 12: Tightly coupled object definitions
+- story 13: Computer Completed Solution
+- story 14: Product authentication
+- story 15: Team Defined 
+- story 16: Team defined
+
 
 ## How to Run
 ```bash

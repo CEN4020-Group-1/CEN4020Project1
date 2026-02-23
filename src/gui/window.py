@@ -75,6 +75,7 @@ class GameWindow:
         self.game_state = None
         self.level1_logic = None
         self.level2_logic = None
+        self.level3_logic = None
         
         #UI state
         self.hover_cell = None
@@ -85,6 +86,7 @@ class GameWindow:
         self.logger = CompletionLogger("game_log.txt")
         self.level1_logged = False   #track if Level 1 completion was logged
         self.level2_logged = False   #track if Level 2 completion was logged
+        self.level3_logged = False
         
         #create buttons
         self._create_buttons()
@@ -99,27 +101,34 @@ class GameWindow:
         #board ends at ~610 for level 2 (120 offset + 7*70 cells), so start buttons at 620
         row1_y = 620
         row1_total_width = 2 * btn_width + btn_spacing
-        row1_start_x = (self.width - row1_total_width) // 2
+        row1_start_x = (self.width - row1_total_width) // 2.67
         
         
         self.btn_undo = Button(row1_start_x, row1_y, btn_width, btn_height, "Undo", self.small_font)
         self.btn_clear = Button(row1_start_x + btn_width + btn_spacing, row1_y, btn_width, btn_height, "Clear", self.small_font)
+
         #User Story 15 Sound On/Off Button
         self.btn_sound_off = Button(50, row1_y - 10, btn_width, btn_height, "-", self.small_font)
         self.btn_sound_on = Button(225, row1_total_width/2 - 35, btn_width + 40, btn_height, "Sound: ON", self.small_font)
+
+        self.btn_auto = Button(row1_start_x + 2 * (btn_width + btn_spacing), row1_y, btn_width, btn_height, "Auto", self.small_font)
+
         
         #row 2: Quit button (centered, red)
         row2_y = row1_y + btn_height + 8
         quit_x = (self.width - btn_width) // 2
         self.btn_quit = Button(quit_x, row2_y, btn_width, btn_height, "Quit", self.small_font, danger=True)
         
-        self.buttons = [self.btn_undo, self.btn_clear, self.btn_quit, self.btn_sound_on]
+
+        self.buttons = [self.btn_undo, self.btn_clear, self.btn_auto, self.btn_quit, self.btn_sound_on]
+
         
-    def set_game_components(self, game_state, level1_logic, level2_logic):
+    def set_game_components(self, game_state, level1_logic, level2_logic, level3_logic):
         #set game components from main
         self.game_state = game_state
         self.level1_logic = level1_logic
         self.level2_logic = level2_logic
+        self.level3_logic = level3_logic
         
     def show_message(self, msg, duration=2000):
         #display a temporary message
@@ -145,10 +154,7 @@ class GameWindow:
             btn.check_hover(mouse_pos)
             
         #update hover cell
-        if self.game_state.level == 1:
-            self.hover_cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
-        else:
-            self.hover_cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=2)
+        self.hover_cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], self.game_state.level)
             
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -169,7 +175,7 @@ class GameWindow:
             return
         
         #undo - only allow if more than just "1" is placed (current_num > 2) and game not won
-        if self.btn_undo.is_clicked(mouse_pos) and self.game_state.current_num > 2 and not self.game_state.win:
+        if self.btn_undo.is_clicked(mouse_pos) and not self.game_state.win:
             self.game_state.undo()
         
         #clear - disabled on win screen
@@ -178,6 +184,20 @@ class GameWindow:
                 self.game_state.reset_level1()
             else:
                 self.game_state.reset_lv2()
+                self.game_state.board
+        
+        if self.btn_auto.is_clicked(mouse_pos) and not self.game_state.win:
+            match self.game_state.level:
+                case 1:
+                    logic = self.level1_logic
+                case 2:
+                    logic = self.level2_logic
+                case 3: 
+                    logic = self.level3_logic
+            
+            if not self.game_state.autocomplete(logic):
+                self.show_message("Board is impossible to complete from here")
+                invalid_sound.play()
         
         #check board click
         if self.game_state.win:
@@ -187,17 +207,23 @@ class GameWindow:
             cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=1)
             if cell:
                 self._handle_level1_click(cell)
-        else:
+        elif self.game_state.level == 2:
             cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=2)
             if cell:
                 self._handle_level2_click(cell)
+                
+        else:
+            cell = self.renderer.get_cell_at_pos(mouse_pos[0], mouse_pos[1], level=3)
+            if cell:
+                self._handle_level3_click(cell)
                 
         # Sound On/Off Button
         if self.btn_sound_on.is_clicked(mouse_pos):
             self.sound_on = not self.sound_on
             self.btn_sound_on.text = "Sound: ON" if self.sound_on else "Sound: OFF"
             return
-                
+            
+                    
     def _handle_level1_click(self, cell):
         row, col = cell
         success, error = self.level1_logic.place_number(row, col)
@@ -238,6 +264,26 @@ class GameWindow:
                 self.show_message("Cell is already occupied!")
             elif error == "invalid_position":
                 self.show_message("Invalid position for this number!")
+    
+    def _handle_level3_click(self, cell):
+        row, col = cell
+        success, error = self.level3_logic.place_number(row, col)
+        
+        if success:
+            #placeholder for sound (story 2)
+            valid_sound(self.sound_on)
+        else:
+            #placeholder for error sound (story 6)
+            invalid_sound(self.sound_on)
+            if error == "out_of_bounds":
+                self.show_message("Cell is out of bounds!")
+            elif error == "cell_occupied":
+                self.show_message("Cell is already occupied!")
+            elif error == "not_adjacent":
+                self.show_message("Must be adjacent to previous number!")
+
+            elif error == "outside_ring_position":
+                self.show_message("Must be aligned with ring position!")
 
                 
     def _update(self):
@@ -252,11 +298,9 @@ class GameWindow:
             self._transition_to_level2()
         
         #log Level 2 completion (Story 7)
-        if self.game_state.level == 2 and self.game_state.win and not self.level2_logged:
-            self._log_completion(2)
-            self.level2_logged = True
-        
-            
+        if self.game_state.level == 2 and self.game_state.win:
+            self._transition_to_level3()
+              
     def _log_completion(self, level):
         #log game completion for Story 7 with human-readable board format
         if level == 1:
@@ -292,7 +336,19 @@ class GameWindow:
         self.game_state.start_level2(completed_board)
         self._update_window_title()
         self.show_message("Level 1 Complete! Starting Level 2...")
+    
+    def _transition_to_level3(self):
+        if not self.level2_logged:
+            self._log_completion(2)
+            self.level2_logged = True
         
+        #save completed level 2 board
+        completed_ring = self.game_state.outer_ring.copy()
+        
+        self.game_state.start_level3(completed_ring)
+        self._update_window_title()
+        self.show_message("Level 2 Complete! Starting Level 3...")
+    
     def _update_window_title(self):
         pygame.display.set_caption("Matrix Game - Level %d" % self.game_state.level)
         
@@ -316,13 +372,22 @@ class GameWindow:
             self.renderer.draw_level1_board(
                 self.game_state.board,
                 last_pos=self.game_state.last_pos,
-                hover_cell=self.hover_cell
+                hover_cell=self.hover_cell,
+                auto_completed_from=self.game_state.auto_completed_from[0]
             )
-        else:
+        elif self.game_state.level == 2:
             self.renderer.draw_level2_board(
                 self.game_state.board,
                 self.game_state.outer_ring,
-                hover_cell=self.hover_cell
+                hover_cell=self.hover_cell,
+                auto_completed_from=self.game_state.auto_completed_from
+            )
+        else:
+            self.renderer.draw_level3_board(
+                self.game_state.board,
+                self.game_state.outer_ring,
+                hover_cell=self.hover_cell,
+                auto_completed_from=self.game_state.auto_completed_from
             )
             
         #draw buttons
@@ -334,7 +399,7 @@ class GameWindow:
             self.renderer.draw_message(self.message)
             
         #draw win message
-        if self.game_state.win and self.game_state.level == 2:
+        if self.game_state.win and self.game_state.level == 3:
             self._draw_win_screen()
             
         pygame.display.flip()

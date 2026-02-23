@@ -13,8 +13,9 @@ class GameState:
         self.last_pos = None                                #position of last placed number
         self.original_one_pos = None                        #original position of "1" for clear functionality
         self.game_over = False                              #game over flag
+        self.auto_completed_from = [-1, -1]                 #If this number is -1, ignore it
         self.win = False
-        self.move_history = History()
+        self.move_history = History()                       
     
     def reset_level1(self):   #reset for a new level 1 game (keeps "1" in original position per story 4)
         self.level = 1
@@ -23,6 +24,7 @@ class GameState:
         self.score = 0
         self.game_over = False
         self.win = False
+        self.auto_completed_from[0] = -1
         self.move_history.clear_history()
         
         #restore "1" to its original position (story 4 requirement)
@@ -43,11 +45,15 @@ class GameState:
         self.score = 0
         self.game_over = False
         self.win = False
+        self.auto_completed_from[0] = -1
         self.move_history.clear_history()
         
         #place "1" randomly and save original position
         row = random.randint(0, 4)
         col = random.randint(0, 4)
+        #Number combo below is for testing backtracking
+        #row = 3
+        #col = 0
         self.board[row][col] = 1
         self.last_pos = (row, col)
         self.original_one_pos = (row, col)   #save for clear functionality (story 4)
@@ -59,10 +65,21 @@ class GameState:
         self.board = [row[:] for row in completed_board]    #copy the completed board
         self.outer_ring = self._create_empty_ring()         #create empty outer ring
         self.current_num = 2                                #start placing from 2 in outer ring
-        self.last_pos = self._find_number_position(1)       #find where 1 is on inner board
+        self.last_pos = (self.original_one_pos[0], self.original_one_pos[1])#find where 1 is on inner board
         self.game_over = False
         self.win = False
-        
+    
+    def start_level3(self, completed_ring):
+        self.level = 3
+        self.outer_ring = completed_ring.copy()
+        self.board = [[0 for _ in range(5)] for _ in range(5)] #Empty the inner board     
+        self.board[self.original_one_pos[0]][self.original_one_pos[1]] = 1 #1st num remains as always
+        self.current_num = 2
+        self.last_pos = (self.original_one_pos[0],self.original_one_pos[1])
+        self.auto_completed_from[0] = -1
+        self.game_over = False
+        self.win = False
+    
     def _create_empty_ring(self):   #create empty outer ring dictionary
         ring = {}
         #top row (7 cells: col 0-6, row 0)
@@ -87,6 +104,13 @@ class GameState:
                     return (row, col)
         return None
     
+    def find_inner_position(self, num): #I don't want to go through the entire board every time I search for the backtrack algorithm
+        action = self.move_history.get_action(num)
+        return (action.inner_pos_x, action.inner_pos_y)
+    
+    def find_outer_position(self, num):
+        return self.move_history.get_action(num).outer_pos
+    
     def get_state_dict(self):   #get state as dictionary for saving
         return {
             'level': self.level,
@@ -95,7 +119,8 @@ class GameState:
             'current_num': self.current_num,
             'score': self.score,
             'last_pos': self.last_pos,
-            'move_history': self.move_history
+            'move_history': self.move_history,
+            'auto_completed_from' : self.auto_completed_from
         }
     
     def set_state_dict(self, state):   #restore state from dictionary
@@ -106,10 +131,13 @@ class GameState:
         self.score = state['score']
         self.last_pos = state['last_pos']
         self.move_history = state['board_history']
+        self.auto_completed_from = state['auto_completed_from']
         self.game_over = False
         self.win = False
     
     def undo(self):
+        if self.current_num == 1: return #You cannot undo the first number
+        
         #In lv 1 I can just pop from the array
         if self.level == 1:
             last_action = self.move_history.undo_history()
@@ -121,9 +149,11 @@ class GameState:
             
             if last_action.scored:
                 self.score -= 1
-            
+        
+        elif self.current_num == 2: return
+        
         #In lv 2 I gotta pay attention to current num
-        elif self.current_num > 2:
+        elif self.level == 2:
             #Current number is ahead of it's previous action by 1
             #Accounting for array starting at 0, previous action is current num - 2
             last_action = self.move_history.get_action(self.current_num - 2)
@@ -133,11 +163,188 @@ class GameState:
             last_action.edit_outer_pos((-1, -1))
             self.current_num -= 1
             self.last_pos = (penult_action.inner_pos_x, penult_action.inner_pos_y)
+        
+        elif self.level == 3:
+            last_action = self.move_history.get_action(self.current_num - 3)
+            penult_action = self.move_history.get_action(self.current_num - 4)
+            
+            row, col = last_action.third_pos
+            penult_row, penult_col = penult_action.third_pos
+            
+            self.board[row][col] = 0
+            last_action.edit_lv3((-1, -1))
+            self.current_num -= 1
+            
+            if self.current_num == 2:
+                self.last_pos = self.original_one_pos
+            else:    
+                self.last_pos = (penult_row, penult_col)
+            
+            if last_action.lv3_scored:
+                self.score -= 1
+                last_action.lv3_scored = False
     
     def reset_lv2(self):
-        for i in range(self.current_num - 1):
+        for i in range(self.current_num - 2):
             self.undo()
+    
+    def is_auto_completed(self, num, is_outer=False):
+        if is_outer:
+            checking = self.auto_completed_from[1]
+        else:
+            checking = self.auto_completed_from[0]
+        
+        if checking == -1:
+            return False
+        
+        return num >= checking
+    
+    def autocomplete(self, level_class):
+        ring_check = {}
+        
+        if self.level == 2:
+            self.auto_completed_from[1] = self.current_num
+            ring_check = self.make_ring_check()
+        else:
+            self.auto_completed_from[0] = self.current_num
+        
+        #if self.level == 3:
+        #    self.lv3_retread_complete(level_class)
+        #    return True
+        if self.backtrack_complete(level_class, ring_check):
+            return True
+        else:
+            if self.level == 2:
+                self.auto_completed_from[1] = -1
+            else:
+                self.auto_completed_from[0] = -1
+        return False
+    
+    def auto_undo(self):
+        if self.is_auto_completed(self.current_num, self.level == 2):
+           self.undo()
+    
+    #In a lv 2 board, if empty cells in the ring's col, row or diagonal ever outnumber thier inner baord counterpart
+    #Then that means you've reached a dead end
+    #To optimize the lv2 backteacking algorithm, there will be a check for this
+    def make_ring_check(self):
+        ring_check = {}
+        
+        for i in range(5):
+            ring_check[str("row_%d" % (i+1))] = [5,2]
+            ring_check[str("col_%d" % (i+1))] = [5,2]
+        ring_check[str("diagonal")] = [5,2]
+        ring_check[str("anti")] = [5,2]
+        
+        #The ring check needs to account for the first value on the inner board
+        one_row, one_col = self.original_one_pos
+        
+        if one_row == one_col:
+            ring_check["diagonal"][0] -= 1
+        if one_row + one_col == 6:
+            ring_check["anti"][0] -= 1
+        ring_check[str("col_%d" % (one_col + 1))][0] -= 1
+        ring_check[str("row_%d" % (one_row + 1))][0] -= 1
+        
+        return ring_check
+
+    def is_deadend(self, row, col, ring_check):
+        if row == col and self.single_deadend_check(ring_check["diagonal"]):
+            return True
+        
+        if row + col == 6 and self.single_deadend_check(ring_check["anti"]):
+            return True
+        
+        if row != 0 and row != 6:
+            row_check = ring_check[str("row_%d" % (row))]
+            if self.single_deadend_check(row_check):
+                return True
+        
+        if col != 0 and col != 6:
+            col_check = ring_check[str("col_%d" % (col))]
+            if self.single_deadend_check(col_check):
+                return True
+        
+        return False
+    
+    def single_deadend_check(self, single_item):
+        return single_item[1] > single_item[0]
+    
+    def edit_ring_check(self, num, row, col, ring_check, add=False):
+        mult = 1 if add else -1
+        
+        #Edit inner count by 1 on everything this cell is a part of
+        inner_row, inner_col = self.find_inner_position(num - 1)
+        
+        if inner_row == inner_col:
+            ring_check["diagonal"][0] += 1 * mult
+        if inner_row + inner_col == 6:
+            ring_check["anti"][0] += 1 * mult
+        ring_check[str("col_%d" % (inner_col + 1))][0] += 1 * mult
+        ring_check[str("row_%d" % (inner_row + 1))][0] += 1 * mult 
+        
+        #Edit outer count by 1 on the cell it would get placed on
+        if row == col:
+            ring_check["diagonal"][1] += 1 * mult
+        elif row + col == 6:
+            ring_check["anti"][1] += 1 * mult
+        elif row == 0 or row == 6:
+            ring_check[str("col_%d" % (col))][1] += 1 * mult
+        elif col == 0 or col == 6:
+            ring_check[str("row_%d" % (row))][1] += 1 * mult
+        
+        return ring_check
+    
+    #With 1 at row3 col0, it took around 28 seconds. The rest is near instant
+    def backtrack_complete(self, level_class, ring_check):
+        if self.current_num >= 26:
+            return True
+        
+        current = self.current_num
+        valid_cells = level_class.get_valid_cells()
+        #print(current)
+        
+        for i in range(len(valid_cells)):
+            cell = valid_cells[i]
+            row, col = cell
+
+            if self.level == 2:
+               self.edit_ring_check(current, row, col, ring_check, False)
+               
+               if self.is_deadend(row, col, ring_check):
+                   #print(current, ring_check)
+                   #print(current, "DEAD END 1")
+                   self.edit_ring_check(current, row, col, ring_check, True)
+                   continue
             
+            #if self.level == 3:
+            #    print("%d was placed in (%d,%d)" % (current, row, col))
+            level_class.place_number(row, col)
+            is_viable = True
+            
+            if self.level == 2:
+                for i in range(current + 1, 26):
+                    if len(level_class.get_valid_cells(i)) == 0:
+                        is_viable = False
+                        #print(current, "DEAD END 2")
+                        break
+            
+            if is_viable and self.backtrack_complete(level_class, ring_check):
+                return True    
+            
+            if self.level == 2:
+                self.edit_ring_check(current, row, col, ring_check, True)
+            
+            #print("%d: Found nothing in (%d, %d)" % (current, row, col))
+            self.auto_undo()
+
+        #If this leads to a dead end, don't check the ith cell in current number anymore
+        return False
+
+    def lv3_retread_complete(self, level_class):
+        for action in self.move_history.arr:
+            level_class.place_number(action.inner_pos_x, action.inner_pos_y)
+                   
 class History:
     def __init__(self):
         self.arr = []
@@ -150,6 +357,9 @@ class History:
     def record_outer_action(self, index, outer):
         self.arr[index].edit_outer_pos(outer)
 
+    def record_action_lv3(self, index, inner, scored = False):
+        self.arr[index].edit_lv3(inner, scored)
+    
     def get_action(self, index):
         return self.arr[index]
 
@@ -170,7 +380,9 @@ class Action:
         self.inner_pos_x = -1
         self.inner_pos_y = -1
         self.outer_pos = (-1, -1)
+        self.third_pos = (-1, -1)
         self.scored = False
+        self.lv3_scored = False
 
     def record_lv1(self, x, y, scored = False):
         self.inner_pos_x = x
@@ -180,12 +392,20 @@ class Action:
     def edit_outer_pos(self, outer_pos):
         self.outer_pos = outer_pos
 
+    def edit_lv3(self, inner_pos, scored = False):
+        self.lv3_scored = scored
+        self.third_pos = inner_pos
+    
     def action_log(self):
         text = "".join(str("Position (%d, %d)" % (self.inner_pos_x, self.inner_pos_y)))
         
         if self.scored:
             text += " Scored a point!"
         if self.outer_pos != (-1, -1):
-            text += str(" Outer Ring Position: (%d, %d)" % (self.outer_pos))
+            text += str("\nOuter Ring Position: (%d, %d)" % (self.outer_pos))
+        if self.third_pos != (-1, -1):
+            text += str("\nLv3 Ring Position: (%d, %d)" % (self.third_pos))
+            if self.lv3_scored:
+                text += str(" Scored a Point!")
         
         return text

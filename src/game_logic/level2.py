@@ -6,11 +6,7 @@ class Level2Logic:
         self.state = game_state   #reference to shared game state
         
     def _get_inner_board_position(self, num):   #find position of number on inner 5x5 board
-        for row in range(5):
-            for col in range(5):
-                if self.state.board[row][col] == num:
-                    return (row, col)
-        return None
+        return self.state.find_inner_position(num - 1) #Account for the array starting at 0 and the lack of the first value's position
     
     def _inner_to_outer_coords(self, inner_row, inner_col):   #convert inner board coords to outer 7x7 coords
         #inner board is offset by 1 in the 7x7 grid
@@ -22,7 +18,9 @@ class Level2Logic:
     def _is_on_anti_diagonal(self, row, col):   #check if position is on anti-diagonal (top-right to bottom-left)
         return row + col == 4
     
-    def get_valid_ring_cells(self, num):   #get valid outer ring cells for placing a number
+    def get_valid_cells(self, num = -1):   #get valid outer ring cells for placing a number
+        if num == -1: #Allow it to have a specific num in case I want to check non-chronologically
+            num = self.state.current_num
         #find where this number is on the inner board
         inner_pos = self._get_inner_board_position(num)
         if inner_pos is None:
@@ -83,7 +81,7 @@ class Level2Logic:
             return (False, "cell_occupied")
         
         #check if this is a valid cell for the current number
-        valid_cells = self.get_valid_ring_cells(self.state.current_num)
+        valid_cells = self.get_valid_cells()
         if pos in valid_cells:
             return (True, None)
         
@@ -111,7 +109,7 @@ class Level2Logic:
         return (True, None)
     
     def has_valid_moves(self):   #check if there are any valid moves for current number
-        return len(self.get_valid_ring_cells(self.state.current_num)) > 0
+        return len(self.get_valid_cells()) > 0
     
     def get_ring_cell_positions(self):   #get all ring cell positions for rendering
         return list(self.state.outer_ring.keys())
