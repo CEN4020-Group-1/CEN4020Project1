@@ -229,7 +229,7 @@ class GameWindow:
             
             if not self.game_state.autocomplete(logic):
                 self.show_message("Board is impossible to complete from here")
-                invalid_sound.play()
+                invalid_sound(self.sound_on)
         
         #check board click
         if self.game_state.win:
