@@ -1,15 +1,11 @@
 #!/usr/bin/env python
-"""
-Authentication Screen - Story 14: User Authentication
-Pygame-based login and registration interface.
-"""
+
 
 import pygame
 import sys
 
-
+#input box for username/password
 class InputBox:
-    """Text input field for username/password."""
     
     def __init__(self, x, y, width, height, font, placeholder="", is_password=False):
         self.rect = pygame.Rect(x, y, width, height)
@@ -21,6 +17,9 @@ class InputBox:
         self.placeholder = placeholder
         self.is_password = is_password
         self.active = False
+        self.cursor_visible = True
+        self.cursor_timer = 0
+        self.cursor_blink_speed = 500
         
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -53,9 +52,26 @@ class InputBox:
         text_surface = self.font.render(display_text, True, text_color)
         screen.blit(text_surface, (self.rect.x + 10, self.rect.y + 10))
 
+        #draw cursor if input box is active
+        if self.active:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.cursor_timer > self.cursor_blink_speed:
+                self.cursor_visible = not self.cursor_visible
+                self.cursor_timer = current_time
+            
+            if self.cursor_visible:
+                if self.text:
+                    text_width = self.font.size(display_text)[0]
+                else:
+                    text_width = 0
+                cursor_x = self.rect.x + 10 + text_width + 2
+                cursor_y1 = self.rect.y + 8
+                cursor_y2 = self.rect.y + self.rect.height - 8
+                pygame.draw.line(screen, (0, 0, 0), (cursor_x, cursor_y1), (cursor_x, cursor_y2), 2)
+
 
 class AuthButton:
-    """Button for login/register actions."""
+    #button for login/register actions
     
     def __init__(self, x, y, width, height, text, font):
         self.rect = pygame.Rect(x, y, width, height)
@@ -79,7 +95,7 @@ class AuthButton:
 
 
 class AuthScreen:
-    """Main authentication screen with login and registration."""
+    #main authentication screen with login and registration
     
     def __init__(self, user_manager):
         self.user_manager = user_manager
@@ -121,7 +137,7 @@ class AuthScreen:
         self.toggle_link_rect = pygame.Rect(0, 340, self.width, 30)
         
     def _switch_mode(self):
-        """Switch between login and register modes."""
+        #switch between login and register modes
         if self.mode == "login":
             self.mode = "register"
             self.action_btn.text = "Create Account"
@@ -243,7 +259,7 @@ class AuthScreen:
         pygame.display.flip()
         
     def run(self):
-        """Run the authentication screen. Returns username on success, None on cancel."""
+        #run the authentication screen
         self._init_pygame()
         
         while self.running:
