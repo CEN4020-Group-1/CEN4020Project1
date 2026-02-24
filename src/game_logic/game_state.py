@@ -18,10 +18,16 @@ class GameState:
         self.move_history = History()                       
     
     def reset_level1(self):   #reset for a new level 1 game (keeps "1" in original position per story 4)
+        #Story 10: Deduct points for each cell being cleared (except "1")
+        #Count how many diagonal moves were made (those are the only ones that scored in L1)
+        cells_to_clear = self.current_num - 2  #all placed numbers except "1"
+        for action in self.move_history.arr[1:]:  #skip the first action (placing "1")
+            if action.scored:
+                self.score -= 1
+        
         self.level = 1
         self.board = [[0 for _ in range(5)] for _ in range(5)]
         self.outer_ring = {}
-        self.score = 0
         self.game_over = False
         self.win = False
         self.auto_completed_from[0] = -1
@@ -147,6 +153,7 @@ class GameState:
             self.current_num -= 1
             self.last_pos = (penult_action.inner_pos_x, penult_action.inner_pos_y)
             
+            #deduct score if the last action scored
             if last_action.scored:
                 self.score -= 1
         
@@ -163,6 +170,9 @@ class GameState:
             last_action.edit_outer_pos((-1, -1))
             self.current_num -= 1
             self.last_pos = (penult_action.inner_pos_x, penult_action.inner_pos_y)
+            
+            #deduct score if the last action scored, since lv2 only gives points for outer ring
+            self.score -= 1
         
         elif self.level == 3:
             last_action = self.move_history.get_action(self.current_num - 3)
@@ -180,9 +190,9 @@ class GameState:
             else:    
                 self.last_pos = (penult_row, penult_col)
             
-            if last_action.lv3_scored:
-                self.score -= 1
-                last_action.lv3_scored = False
+            #deduct score if the last action scored, lv3 only gives points for inner board
+            self.score -= 1
+            last_action.lv3_scored = False
     
     def reset_lv2(self):
         for i in range(self.current_num - 2):

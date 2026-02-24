@@ -12,9 +12,22 @@ from game_logic.level1 import Level1Logic
 from game_logic.level2 import Level2Logic
 from game_logic.level3 import Level3Logic
 from gui.window import GameWindow
+from auth.user_manager import UserManager
+from auth.auth_screen import AuthScreen
 
 
 def main():
+    #authenticate user before starting game
+    user_manager = UserManager()
+    auth_screen = AuthScreen(user_manager)
+    
+    #show login/register screen
+    username = auth_screen.run()
+    
+    if not username:
+        #user closed auth screen without logging in
+        return
+    
     #create game state
     game_state = GameState()
     
@@ -27,11 +40,14 @@ def main():
     window = GameWindow()
     window.set_game_components(game_state, level1_logic, level2_logic, level3_logic)
     
+    #set authenticated player name
+    window.set_player_name(username)
+    
     #start game with random placement of 1 (User Story 1 requirement)
     game_state.start_level1_with_random_one()
     
-    #show welcome message
-    window.show_message("Welcome To The Matrix Game!")
+    #show welcome message with player name
+    window.show_message(f"Welcome, {username}!")
     
     #run the game
     window.run()

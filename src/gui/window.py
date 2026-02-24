@@ -92,6 +92,9 @@ class GameWindow:
         self.level2_logged = False   #track if Level 2 completion was logged
         self.level3_logged = False
         
+        #set player name after authentication
+        self.player_name = "Player"
+        
         #create buttons
         self._create_buttons()
         
@@ -147,6 +150,10 @@ class GameWindow:
         self.level1_logic = level1_logic
         self.level2_logic = level2_logic
         self.level3_logic = level3_logic
+    
+    def set_player_name(self, name):
+        #set authenticated player name
+        self.player_name = name
         
     def show_message(self, msg, duration=2000):
         #display a temporary message
@@ -338,9 +345,10 @@ class GameWindow:
               
     def _log_completion(self, level):
         #log game completion for Story 7 with human-readable board format
+        #use authenticated player name
         if level == 1:
             record = CompletionRecord(
-                player_name="Player",
+                player_name=self.player_name,
                 timestamp_iso=iso_now(),
                 level=level,
                 points=self.game_state.score,
@@ -349,7 +357,7 @@ class GameWindow:
             )
         else:
             record = CompletionRecord(
-                player_name="Player",
+                player_name=self.player_name,
                 timestamp_iso=iso_now(),
                 level=level,
                 points=self.game_state.score,

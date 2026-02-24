@@ -97,6 +97,9 @@ class Level2Logic:
         #place the number in the ring
         self.state.outer_ring[pos] = self.state.current_num
         
+        #add score for every successful placement, lv2 rule
+        self.state.score += 1
+        
         #update state
         self.state.last_pos = pos
         self.state.move_history.record_outer_action(self.state.current_num - 1, pos)

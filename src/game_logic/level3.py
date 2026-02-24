@@ -106,10 +106,8 @@ class Level3Logic:
         if not valid:
             return (False, error)
         
-        #scored = self.is_diagonal_move(row, col)
-        #add score for diagonal moves
-        #if scored:
-        #    self.state.score += 1
+        #add score for every successful placement, lv3 rule
+        self.state.score += 1
         
         #place the number
         self.state.board[row][col] = self.state.current_num
