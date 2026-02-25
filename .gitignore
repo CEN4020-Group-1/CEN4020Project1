@@ -12,3 +12,14 @@ saves/
 
 # OS
 .DS_Store
+
+# Local submission folder
+Proj1/
+
+# Game log files (local testing)
+game_log.txt
+game_log.csv
+
+
+docs/cell-state-machine.md
+docs/demo-script.md

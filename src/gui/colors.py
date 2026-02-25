@@ -27,6 +27,7 @@ INNER_BOARD_LOCKED = (230, 245, 255) #very light blue - matches inner board
 TEXT_DARK = (30, 30, 30)
 TEXT_LIGHT = (250, 250, 250)
 TEXT_BLUE = (0, 70, 180)            #blue text for inner board numbers
+TEXT_RED = (250, 0, 0)              #red text for auto completed numbers
 
 #header bar colors
 HEADER_BG = (240, 245, 250)         #light gray-blue background
